@@ -551,6 +551,10 @@
     flex-shrink: 0;
   }
 
+  #modal-overlay.aberto, #modal-edit-overlay.aberto {
+    display: flex !important;
+  }
+
   @media (max-width: 700px) {
     #sidebar {
       transform: translateX(-100%);
@@ -1146,7 +1150,49 @@
 </div>
 
 
+
 </main>
+
+<!-- ===================== MODAL SUBSTITUIR ITEM ===================== -->
+<div id="modal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;">
+  <div id="modal-box" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;width:min(480px,92vw);max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,0.5);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div style="font-family:Cinzel,serif;font-size:1.05rem;color:var(--gold2);">🔄 Substituir Item</div>
+      <button onclick="fecharModal()" style="background:none;border:none;color:var(--text3);font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="modal-item-atual" style="background:var(--bg4);border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:0.85rem;color:var(--text2);"></div>
+    <div class="form-group">
+      <label>Novo Item</label>
+      <select id="modal-sel-item" onchange="modalPreview()">
+        <option value="">Selecione o item...</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Quantidade</label>
+      <input id="modal-qtd" type="number" min="1" placeholder="Ex: 2" oninput="modalPreview()">
+    </div>
+    <div id="modal-preview" style="display:none;background:var(--bg4);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:0.82rem;"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button onclick="fecharModal()" class="btn btn-ghost btn-sm">Cancelar</button>
+      <button onclick="confirmarSubstituicao()" class="btn btn-gold btn-sm">✓ Confirmar Troca</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODAL EDITAR ITEM ===================== -->
+<div id="modal-edit-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;width:min(440px,92vw);box-shadow:0 8px 40px rgba(0,0,0,0.5);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div id="modal-edit-title" style="font-family:Cinzel,serif;font-size:1.05rem;color:var(--gold2);">✏️ Editar Item</div>
+      <button onclick="fecharModalEdit()" style="background:none;border:none;color:var(--text3);font-size:1.3rem;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="modal-edit-fields"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:4px;">
+      <button onclick="fecharModalEdit()" class="btn btn-ghost btn-sm">Cancelar</button>
+      <button onclick="confirmarEdicao()" class="btn btn-gold btn-sm">✓ Salvar</button>
+    </div>
+  </div>
+</div>
 
 <script>
 // ============================
@@ -1369,7 +1415,7 @@ function renderItems() {
       <td><strong>${i.nome}</strong> <span style="color:var(--text3);font-size:0.7rem">${i.unidade !== '—' ? '🌿 '+i.unidade : ''}</span></td>
       <td><span class="chip chip-teal">${fmt(i.farm)}</span></td>
       <td><span class="chip chip-gold">${fmt(i.valor)}</span></td>
-      <td><button class="btn btn-red btn-xs" onclick="removeItem('${i.id}')">✕</button></td>
+      <td style="display:flex;gap:4px;"><button class="btn btn-ghost btn-xs" onclick="editarItem('${i.id}')" title="Editar">✏️</button><button class="btn btn-red btn-xs" onclick="removeItem('${i.id}')">✕</button></td>
     </tr>`).join('')+'</tbody></table></div>';
 }
 
@@ -1406,7 +1452,7 @@ function renderTradeItems() {
       <td><strong>${i.nome}</strong></td>
       <td><span class="chip chip-purple">${i.categoria}</span></td>
       <td><span class="chip chip-gold">${fmt(i.valor)}</span></td>
-      <td><button class="btn btn-red btn-xs" onclick="removeTradeItem('${i.id}')">✕</button></td>
+      <td style="display:flex;gap:4px;"><button class="btn btn-ghost btn-xs" onclick="editarTradeItem('${i.id}')" title="Editar">✏️</button><button class="btn btn-red btn-xs" onclick="removeTradeItem('${i.id}')">✕</button></td>
     </tr>`).join('')+'</tbody></table></div>';
 }
 
@@ -2073,8 +2119,7 @@ function renderFarmVenda() {
           + '<button onclick="removerItemFarmVenda(\\\'' + f.vendaId + '\\\'' + ',' + i + ')" title="Remover item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--red)\';this.style.color=\'var(--red2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">✕</button>'
           + '</div>';
       }).join('')
-      + '<div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">'
-      + '<button class="btn btn-ghost btn-sm" style="border-color:var(--teal);color:var(--teal2);" onclick="adicionarItemFarmVenda(\'' + f.vendaId + '\')">+ Adicionar Item</button>'
+      + '<div style="margin-top:10px;display:flex;justify-content:flex-end;">'
       + '<button class="btn btn-green btn-sm" onclick="completeFarmVenda(\'' + f.vendaId + '\')">✓ Concluído → Entrega</button>'
       + '</div></div>';
   }).join('');
@@ -2183,8 +2228,7 @@ function renderFarmTroca() {
           + '<button onclick="removerItemFarmTroca(\\\'' + f.trocaId + '\\\'' + ',' + i + ')" title="Remover item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--red)\';this.style.color=\'var(--red2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">✕</button>'
           + '</div>';
       }).join('')
-      + '<div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">'
-      + '<button class="btn btn-ghost btn-sm" style="border-color:var(--teal);color:var(--teal2);" onclick="adicionarItemFarmTroca(\'' + f.trocaId + '\')">+ Adicionar Item</button>'
+      + '<div style="margin-top:10px;display:flex;justify-content:flex-end;">'
       + '<button class="btn btn-green btn-sm" onclick="completeFarmTroca(\'' + f.trocaId + '\')">✓ Concluído → Entrega</button>'
       + '</div></div>';
   }).join('');
@@ -2499,61 +2543,195 @@ function removerCancelado(tipo, idx) {
 }
 
 // ============================
-// SUBSTITUIR ITEM NA PRODUÇÃO
+// MODAL SUBSTITUIR ITEM NA PRODUÇÃO
 // ============================
-function substituirItemFarmVenda(vid, idx) {
-  const f = S.farmVenda.find(x=>x.vendaId===vid);
+let _modalCtx = null; // { tipo: 'venda'|'troca', refId, idx }
+
+function abrirModalSubstituir(tipo, refId, idx) {
+  if(!S.items.length){notify('Nenhum item cadastrado na lista de itens.','red');return;}
+  let farmList = tipo==='venda' ? S.farmVenda : S.farmTroca;
+  let f = tipo==='venda' ? farmList.find(x=>x.vendaId===refId) : farmList.find(x=>x.trocaId===refId);
   if(!f) return;
   const it = f.items[idx];
   if(!it) return;
-  if(!S.items.length){alert('Nenhum item cadastrado na lista de itens.');return;}
-  const opcoes = S.items.map((item,i)=>`${i+1}. ${item.nome} (Farm: ${fmt(item.farm)}/un)`).join('\n');
-  const resp = prompt(`Substituir "${it.nome} x${it.qtd}"\nEscolha o número do novo item:\n\n${opcoes}`,'');
-  if(resp===null||resp.trim()==='') return;
-  const escolha = parseInt(resp)-1;
-  if(isNaN(escolha)||escolha<0||escolha>=S.items.length){alert('Número inválido.');return;}
-  const novoItem = S.items[escolha];
-  const novaQtd = parseInt(prompt(`Quantidade de "${novoItem.nome}"?`, it.qtd+''))||it.qtd;
+
+  _modalCtx = {tipo, refId, idx};
+
+  // Preencher item atual
+  document.getElementById('modal-item-atual').innerHTML =
+    `<span style="color:var(--text3);">Substituindo:</span> <strong style="color:var(--gold2)">${it.nome}</strong> <span style="color:var(--text3)">x${it.qtd}</span>`;
+
+  // Preencher select
+  const sel = document.getElementById('modal-sel-item');
+  sel.innerHTML = '<option value="">Selecione o item...</option>';
+  S.items.forEach(item => {
+    sel.innerHTML += `<option value="${item.id}">${item.nome} — Farm: ${fmt(item.farm)}/un — ${fmt(item.valor)}</option>`;
+  });
+
+  // Preencher quantidade com o valor antigo
+  document.getElementById('modal-qtd').value = it.qtd;
+  document.getElementById('modal-preview').style.display = 'none';
+
+  document.getElementById('modal-overlay').classList.add('aberto');
+  setTimeout(()=>document.getElementById('modal-sel-item').focus(), 100);
+}
+
+function fecharModal() {
+  document.getElementById('modal-overlay').classList.remove('aberto');
+  _modalCtx = null;
+}
+
+function modalPreview() {
+  const itemId = document.getElementById('modal-sel-item').value;
+  const qtd = parseInt(document.getElementById('modal-qtd').value)||0;
+  const prev = document.getElementById('modal-preview');
+  if(!itemId||!qtd){prev.style.display='none';return;}
+  const item = S.items.find(i=>i.id===itemId);
+  if(!item){prev.style.display='none';return;}
+  prev.style.display='block';
+  prev.innerHTML = `
+    <div style="color:var(--text3);margin-bottom:6px;font-size:0.75rem;">NOVO ITEM</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+      <div><span style="color:var(--text3);font-size:0.7rem;">NOME</span><br><strong style="color:var(--gold2)">${item.nome}</strong></div>
+      <div><span style="color:var(--text3);font-size:0.7rem;">QUANTIDADE</span><br><strong>x${qtd}</strong></div>
+      <div><span style="color:var(--text3);font-size:0.7rem;">FARM TOTAL</span><br><strong style="color:var(--teal2)">${fmt(item.farm*qtd)}</strong></div>
+      <div><span style="color:var(--text3);font-size:0.7rem;">VALOR TOTAL</span><br><strong style="color:var(--gold2)">${fmt(item.valor*qtd)}</strong></div>
+    </div>`;
+}
+
+function confirmarSubstituicao() {
+  if(!_modalCtx){fecharModal();return;}
+  const itemId = document.getElementById('modal-sel-item').value;
+  const qtd = parseInt(document.getElementById('modal-qtd').value)||0;
+  if(!itemId){notify('Selecione um item','red');return;}
+  if(qtd<=0){notify('Informe a quantidade','red');return;}
+  const novoItem = S.items.find(i=>i.id===itemId);
+  if(!novoItem){notify('Item não encontrado','red');return;}
+
+  const {tipo, refId, idx} = _modalCtx;
+  let f = tipo==='venda'
+    ? S.farmVenda.find(x=>x.vendaId===refId)
+    : S.farmTroca.find(x=>x.trocaId===refId);
+  if(!f){fecharModal();return;}
+
   f.items[idx] = {
     nome: novoItem.nome,
-    qtd: novaQtd,
+    qtd,
     farmUnit: novoItem.farm,
-    farmTotal: novoItem.farm * novaQtd,
+    farmTotal: novoItem.farm * qtd,
     farmDone: false,
     fabDone: false,
     unidade: novoItem.unidade||'un'
   };
   save();
-  renderFarmVenda();
+  if(tipo==='venda') renderFarmVenda(); else renderFarmTroca();
+  fecharModal();
   notify('Item substituído!','green');
 }
 
-function substituirItemFarmTroca(tid, idx) {
-  const f = S.farmTroca.find(x=>x.trocaId===tid);
-  if(!f) return;
-  const it = f.items[idx];
-  if(!it) return;
-  if(!S.items.length){alert('Nenhum item cadastrado na lista de itens.');return;}
-  const opcoes = S.items.map((item,i)=>`${i+1}. ${item.nome} (Farm: ${fmt(item.farm)}/un)`).join('\n');
-  const resp = prompt(`Substituir "${it.nome} x${it.qtd}"\nEscolha o número do novo item:\n\n${opcoes}`,'');
-  if(resp===null||resp.trim()==='') return;
-  const escolha = parseInt(resp)-1;
-  if(isNaN(escolha)||escolha<0||escolha>=S.items.length){alert('Número inválido.');return;}
-  const novoItem = S.items[escolha];
-  const novaQtd = parseInt(prompt(`Quantidade de "${novoItem.nome}"?`, it.qtd+''))||it.qtd;
-  f.items[idx] = {
-    nome: novoItem.nome,
-    qtd: novaQtd,
-    farmUnit: novoItem.farm,
-    farmTotal: novoItem.farm * novaQtd,
-    farmDone: false,
-    fabDone: false,
-    unidade: novoItem.unidade||'un'
-  };
-  save();
-  renderFarmTroca();
-  notify('Item substituído!','green');
+function substituirItemFarmVenda(vid, idx) { abrirModalSubstituir('venda', vid, idx); }
+function substituirItemFarmTroca(tid, idx) { abrirModalSubstituir('troca', tid, idx); }
+
+// Fechar modal ao clicar fora
+document.getElementById('modal-overlay').addEventListener('click', function(e){
+  if(e.target===this) fecharModal();
+});
+
+// ============================
+// MODAL EDITAR ITEM CADASTRADO
+// ============================
+let _editCtx = null; // { tipo: 'item'|'tradeItem', id }
+
+function editarItem(id) {
+  const item = S.items.find(i=>i.id===id);
+  if(!item) return;
+  _editCtx = {tipo:'item', id};
+  document.getElementById('modal-edit-title').textContent = '✏️ Editar Item';
+  document.getElementById('modal-edit-fields').innerHTML = `
+    <div class="form-group">
+      <label>Nome do Item</label>
+      <input id="edit-nome" type="text" value="${item.nome}">
+    </div>
+    <div class="form-group">
+      <label>Quantidade de Farm (por unidade)</label>
+      <input id="edit-farm" type="number" min="0" value="${item.farm}">
+    </div>
+    <div class="form-group">
+      <label>Valor (por unidade)</label>
+      <input id="edit-valor" type="number" min="0" value="${item.valor}">
+    </div>
+    <div class="form-group">
+      <label>Tipo de Farm</label>
+      <input id="edit-unidade" type="text" value="${item.unidade!=='—'?item.unidade:''}">
+    </div>`;
+  document.getElementById('modal-edit-overlay').classList.add('aberto');
+  setTimeout(()=>document.getElementById('edit-nome').focus(),100);
 }
+
+function editarTradeItem(id) {
+  const item = S.tradeItems.find(i=>i.id===id);
+  if(!item) return;
+  _editCtx = {tipo:'tradeItem', id};
+  document.getElementById('modal-edit-title').textContent = '✏️ Editar Item de Troca';
+  document.getElementById('modal-edit-fields').innerHTML = `
+    <div class="form-group">
+      <label>Nome do Item</label>
+      <input id="edit-nome" type="text" value="${item.nome}">
+    </div>
+    <div class="form-group">
+      <label>Valor do Item</label>
+      <input id="edit-valor" type="number" min="0" value="${item.valor}">
+    </div>
+    <div class="form-group">
+      <label>Categoria</label>
+      <input id="edit-cat" type="text" value="${item.categoria||'Geral'}">
+    </div>`;
+  document.getElementById('modal-edit-overlay').classList.add('aberto');
+  setTimeout(()=>document.getElementById('edit-nome').focus(),100);
+}
+
+function fecharModalEdit() {
+  document.getElementById('modal-edit-overlay').classList.remove('aberto');
+  _editCtx = null;
+}
+
+function confirmarEdicao() {
+  if(!_editCtx) return;
+  const nome = document.getElementById('edit-nome').value.trim();
+  if(!nome){notify('Informe o nome','red');return;}
+
+  if(_editCtx.tipo==='item') {
+    const item = S.items.find(i=>i.id===_editCtx.id);
+    if(!item) return;
+    const valor = parseFloat(document.getElementById('edit-valor').value)||0;
+    if(!valor){notify('Informe o valor','red');return;}
+    item.nome = nome;
+    item.farm = parseFloat(document.getElementById('edit-farm').value)||0;
+    item.valor = valor;
+    item.unidade = document.getElementById('edit-unidade').value.trim()||'—';
+    save();
+    renderItems();
+    refreshAllSelects();
+    notify('Item atualizado!','green');
+  } else {
+    const item = S.tradeItems.find(i=>i.id===_editCtx.id);
+    if(!item) return;
+    const valor = parseFloat(document.getElementById('edit-valor').value)||0;
+    if(!valor){notify('Informe o valor','red');return;}
+    item.nome = nome;
+    item.valor = valor;
+    item.categoria = document.getElementById('edit-cat').value.trim()||'Geral';
+    save();
+    renderTradeItems();
+    refreshAllSelects();
+    notify('Item de troca atualizado!','green');
+  }
+  fecharModalEdit();
+}
+
+document.getElementById('modal-edit-overlay').addEventListener('click', function(e){
+  if(e.target===this) fecharModalEdit();
+});
 
 // ============================
 // INIT
