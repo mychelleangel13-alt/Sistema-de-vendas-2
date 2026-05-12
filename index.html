@@ -322,6 +322,42 @@
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
+  /* SAFARI FIXES */
+  #sidebar {
+    -webkit-overflow-scrolling: touch;
+  }
+  #main {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+  .tbl-wrap {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+  }
+  .flex {
+    -webkit-flex-wrap: wrap;
+  }
+  input, select, textarea {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%234a6080'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 28px;
+  }
+  .stat-val {
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Prevent text clipping in gradient text on Safari */
+  .sidebar-logo h1,
+  #mobile-logo-text {
+    padding-bottom: 2px;
+  }
+
   /* CHECKBOX ROW */
   .check-row {
     display: flex;
@@ -595,6 +631,7 @@
 
   <div class="sidebar-section">Resumo</div>
   <div class="nav-item" onclick="goTo('total')"><span class="icon">📊</span>Total</div>
+  <div class="nav-item" onclick="goTo('cancelados')"><span class="icon">🚫</span>Cancelados<span id="badge-cancelados" class="nav-badge" style="display:none;background:var(--red)">0</span></div>
 
   <div class="sidebar-section">Dados</div>
   <div class="nav-item" onclick="exportarDados()"><span class="icon">💾</span>Exportar Backup</div>
@@ -1077,6 +1114,38 @@
   </div>
 </div>
 
+<!-- ===================== CANCELADOS ===================== -->
+<div class="page" id="page-cancelados">
+  <div class="page-title">🚫 Cancelados</div>
+  <div class="page-sub">ENCOMENDAS E TROCAS CANCELADAS COM MOTIVO</div>
+
+  <div class="grid-2" style="margin-bottom:16px;">
+    <div class="stat-card">
+      <div class="stat-val" id="canc-total-vendas" style="color:var(--red2)">0</div>
+      <div class="stat-label">Vendas Canceladas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="canc-total-trocas" style="color:var(--red2)">0</div>
+      <div class="stat-label">Trocas Canceladas</div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">🛒 Vendas Canceladas</div>
+    <div id="canc-vendas-list">
+      <div class="empty"><div class="empty-icon">🚫</div>Nenhuma venda cancelada</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🤝 Trocas Canceladas</div>
+    <div id="canc-trocas-list">
+      <div class="empty"><div class="empty-icon">🚫</div>Nenhuma troca cancelada</div>
+    </div>
+  </div>
+</div>
+
+
 </main>
 
 <script>
@@ -1119,6 +1188,7 @@ const DEFAULTS = {
   entregas: [],
   histVendas: [],
   histTrocas: [],
+  cancelados: [],
   idCounter: 1,
 };
 
@@ -1146,6 +1216,7 @@ function saveState() {
       entregas: S.entregas,
       histVendas: S.histVendas,
       histTrocas: S.histTrocas,
+      cancelados: S.cancelados,
       idCounter: idCounter,
     };
     localStorage.setItem(LS_KEY, JSON.stringify(toSave));
@@ -1167,6 +1238,7 @@ const S = {
   entregas: _loaded.entregas,
   histVendas: _loaded.histVendas,
   histTrocas: _loaded.histTrocas,
+  cancelados: _loaded.cancelados||[],
   // Temporários (não persistidos)
   calcVendaItems: [],
   calcVendaCliente: '',
@@ -1221,6 +1293,7 @@ const PAGE_NAMES = {
   'hist-vendas': 'Hist. Vendas',
   'hist-trocas': 'Hist. Trocas',
   'total': 'Dashboard',
+  'cancelados': 'Cancelados',
 };
 
 function goTo(id) {
@@ -1246,6 +1319,7 @@ function goTo(id) {
     'hist-vendas': renderHistVendas,
     'hist-trocas': renderHistTrocas,
     'total': renderTotal,
+    'cancelados': renderCancelados,
     'calc-venda': refreshCalcVendaSelects,
     'calc-troca': refreshCalcTrocaSelects,
   };
@@ -1993,12 +2067,14 @@ function renderFarmVenda() {
         return '<div class="check-row ' + (it.farmDone&&it.fabDone?'done':'') + '" style="flex-wrap:wrap;gap:6px;">'
           + '<div style="flex:2;min-width:120px;"><strong>' + it.nome + '</strong><span style="color:var(--text3)"> x' + it.qtd + '</span>' + tipo + '</div>'
           + '<div style="font-size:0.75rem;color:var(--teal2);white-space:nowrap;">Farm: ' + fmt(it.farmTotal) + '</div>'
-          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.farmDone?'checked':'') + ' onchange="toggleFarmVenda(\'' + f.vendaId + '\',' + i + ',\'farm\',this.checked)"> Farmado</label>'
-          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.fabDone?'checked':'') + ' onchange="toggleFarmVenda(\'' + f.vendaId + '\',' + i + ',\'fab\',this.checked)"> Fabricado</label>'
-          + '<button onclick="removerItemFarmVenda(\'' + f.vendaId + '\',' + i + ')" title="Remover item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--red)\';this.style.color=\'var(--red2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">✕ Item</button>'
+          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.farmDone?'checked':'') + ' onchange="toggleFarmVenda(\\\'' + f.vendaId + '\\\''  + ',' + i + ',\'farm\',this.checked)"> Farmado</label>'
+          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.fabDone?'checked':'') + ' onchange="toggleFarmVenda(\\\'' + f.vendaId + '\\\''  + ',' + i + ',\'fab\',this.checked)"> Fabricado</label>'
+          + '<button onclick="substituirItemFarmVenda(\\\'' + f.vendaId + '\\\'' + ',' + i + ')" title="Trocar item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--teal)\';this.style.color=\'var(--teal2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">🔄 Trocar</button>'
+          + '<button onclick="removerItemFarmVenda(\\\'' + f.vendaId + '\\\'' + ',' + i + ')" title="Remover item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--red)\';this.style.color=\'var(--red2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">✕</button>'
           + '</div>';
       }).join('')
-      + '<div style="margin-top:10px;display:flex;justify-content:flex-end;">'
+      + '<div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">'
+      + '<button class="btn btn-ghost btn-sm" style="border-color:var(--teal);color:var(--teal2);" onclick="adicionarItemFarmVenda(\'' + f.vendaId + '\')">+ Adicionar Item</button>'
       + '<button class="btn btn-green btn-sm" onclick="completeFarmVenda(\'' + f.vendaId + '\')">✓ Concluído → Entrega</button>'
       + '</div></div>';
   }).join('');
@@ -2026,16 +2102,29 @@ function completeFarmVenda(vid) {
 }
 
 function cancelarFarmVenda(vid) {
-  if(!confirm('Cancelar esta encomenda? Ela será removida da produção e a venda ficará cancelada.')) return;
-  // Remove from farmVenda
+  const motivo = prompt('Motivo do cancelamento (opcional):','');
+  if(motivo === null) return; // pressed cancel on prompt
   const idx = S.farmVenda.findIndex(x=>x.vendaId===vid);
   if(idx===-1) return;
+  const f = S.farmVenda[idx];
   S.farmVenda.splice(idx,1);
-  // Mark venda as cancelada
   const venda = S.vendas.find(v=>v.id===vid);
   if(venda) venda.status='cancelado';
+  // Add to cancelados log
+  if(!S.cancelados) S.cancelados=[];
+  S.cancelados.push({
+    tipo:'venda',
+    refId:vid,
+    nome: f.cliente,
+    nomeId: f.clienteId,
+    motivo: motivo||'Não informado',
+    ts: f.ts,
+    canceladoEm: new Date().toLocaleString('pt-BR'),
+    itens: f.items.map(i=>i.nome+' x'+i.qtd)
+  });
   save();
   renderFarmVenda();
+  updateBadgeCancelados();
   notify('Encomenda cancelada.','red');
 }
 
@@ -2088,12 +2177,14 @@ function renderFarmTroca() {
         return '<div class="check-row ' + (it.farmDone&&it.fabDone?'done':'') + '" style="flex-wrap:wrap;gap:6px;">'
           + '<div style="flex:2;min-width:120px;"><strong>' + it.nome + '</strong><span style="color:var(--text3)"> x' + it.qtd + '</span>' + tipo + '</div>'
           + '<div style="font-size:0.75rem;color:var(--teal2);white-space:nowrap;">Farm: ' + fmt(it.farmTotal) + '</div>'
-          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.farmDone?'checked':'') + ' onchange="toggleFarmTroca(\'' + f.trocaId + '\',' + i + ',\'farm\',this.checked)"> Farmado</label>'
-          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.fabDone?'checked':'') + ' onchange="toggleFarmTroca(\'' + f.trocaId + '\',' + i + ',\'fab\',this.checked)"> Fabricado</label>'
-          + '<button onclick="removerItemFarmTroca(\'' + f.trocaId + '\',' + i + ')" title="Remover item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--red)\';this.style.color=\'var(--red2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">✕ Item</button>'
+          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.farmDone?'checked':'') + ' onchange="toggleFarmTroca(\\\'' + f.trocaId + '\\\''  + ',' + i + ',\'farm\',this.checked)"> Farmado</label>'
+          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.fabDone?'checked':'') + ' onchange="toggleFarmTroca(\\\'' + f.trocaId + '\\\''  + ',' + i + ',\'fab\',this.checked)"> Fabricado</label>'
+          + '<button onclick="substituirItemFarmTroca(\\\'' + f.trocaId + '\\\'' + ',' + i + ')" title="Trocar item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--teal)\';this.style.color=\'var(--teal2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">🔄 Trocar</button>'
+          + '<button onclick="removerItemFarmTroca(\\\'' + f.trocaId + '\\\'' + ',' + i + ')" title="Remover item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--red)\';this.style.color=\'var(--red2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">✕</button>'
           + '</div>';
       }).join('')
-      + '<div style="margin-top:10px;display:flex;justify-content:flex-end;">'
+      + '<div style="margin-top:10px;display:flex;justify-content:space-between;align-items:center;">'
+      + '<button class="btn btn-ghost btn-sm" style="border-color:var(--teal);color:var(--teal2);" onclick="adicionarItemFarmTroca(\'' + f.trocaId + '\')">+ Adicionar Item</button>'
       + '<button class="btn btn-green btn-sm" onclick="completeFarmTroca(\'' + f.trocaId + '\')">✓ Concluído → Entrega</button>'
       + '</div></div>';
   }).join('');
@@ -2121,15 +2212,29 @@ function completeFarmTroca(tid) {
 }
 
 function cancelarFarmTroca(tid) {
-  if(!confirm('Cancelar esta troca em produção? Ela será removida do farm e a troca ficará cancelada.')) return;
+  const motivo = prompt('Motivo do cancelamento (opcional):','');
+  if(motivo === null) return;
   const idx = S.farmTroca.findIndex(x=>x.trocaId===tid);
   if(idx===-1) return;
+  const f = S.farmTroca[idx];
   S.farmTroca.splice(idx,1);
   const troca = S.trocas.find(t=>t.id===tid);
   if(troca) troca.status='cancelado';
+  if(!S.cancelados) S.cancelados=[];
+  S.cancelados.push({
+    tipo:'troca',
+    refId:tid,
+    nome: f.player,
+    nomeId: f.playerId,
+    motivo: motivo||'Não informado',
+    ts: f.ts,
+    canceladoEm: new Date().toLocaleString('pt-BR'),
+    itens: f.items.map(i=>i.nome+' x'+i.qtd)
+  });
   save();
   renderFarmTroca();
   updateBadge();
+  updateBadgeCancelados();
   notify('Troca cancelada.','red');
 }
 
@@ -2310,6 +2415,146 @@ function renderTotal() {
       </tr>`).join('')+'</tbody></table></div>';
 }
 
+
+// ============================
+// CANCELADOS
+// ============================
+function updateBadgeCancelados() {
+  if(!S.cancelados) S.cancelados=[];
+  const b = document.getElementById('badge-cancelados');
+  if(!b) return;
+  if(S.cancelados.length>0){b.style.display='';b.textContent=S.cancelados.length;}
+  else b.style.display='none';
+}
+
+function renderCancelados() {
+  if(!S.cancelados) S.cancelados=[];
+  const vendas = S.cancelados.filter(c=>c.tipo==='venda');
+  const trocas = S.cancelados.filter(c=>c.tipo==='troca');
+
+  document.getElementById('canc-total-vendas').textContent = vendas.length;
+  document.getElementById('canc-total-trocas').textContent = trocas.length;
+
+  // Vendas canceladas
+  const evEl = document.getElementById('canc-vendas-list');
+  if(!vendas.length) {
+    evEl.innerHTML='<div class="empty"><div class="empty-icon">🚫</div>Nenhuma venda cancelada</div>';
+  } else {
+    evEl.innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Cliente</th><th>ID</th><th>Itens</th><th>Motivo</th><th>Cancelado em</th><th></th></tr></thead><tbody>' +
+      [...vendas].reverse().map((c,ri)=>{
+        const i = vendas.length-1-ri;
+        return `<tr>
+          <td><strong>${c.nome}</strong></td>
+          <td style="color:var(--text3)">${c.nomeId}</td>
+          <td style="font-size:0.78rem;color:var(--text2)">${(c.itens||[]).join(', ')||'—'}</td>
+          <td><span class="chip chip-red" style="font-size:0.72rem;cursor:pointer" onclick="editMotivo('venda',${vendas.length-1-ri})" title="Clique para editar">${c.motivo}</span></td>
+          <td style="color:var(--text3);font-size:0.75rem">${c.canceladoEm||c.ts}</td>
+          <td><button class="btn btn-red btn-xs" onclick="removerCancelado('venda',${vendas.length-1-ri})">✕</button></td>
+        </tr>`;
+      }).join('') + '</tbody></table></div>';
+  }
+
+  // Trocas canceladas
+  const etEl = document.getElementById('canc-trocas-list');
+  if(!trocas.length) {
+    etEl.innerHTML='<div class="empty"><div class="empty-icon">🚫</div>Nenhuma troca cancelada</div>';
+  } else {
+    etEl.innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Player</th><th>ID</th><th>Itens</th><th>Motivo</th><th>Cancelado em</th><th></th></tr></thead><tbody>' +
+      [...trocas].reverse().map((c,ri)=>{
+        return `<tr>
+          <td><strong>${c.nome}</strong></td>
+          <td style="color:var(--text3)">${c.nomeId}</td>
+          <td style="font-size:0.78rem;color:var(--text2)">${(c.itens||[]).join(', ')||'—'}</td>
+          <td><span class="chip chip-red" style="font-size:0.72rem;cursor:pointer" onclick="editMotivo('troca',${trocas.length-1-ri})" title="Clique para editar">${c.motivo}</span></td>
+          <td style="color:var(--text3);font-size:0.75rem">${c.canceladoEm||c.ts}</td>
+          <td><button class="btn btn-red btn-xs" onclick="removerCancelado('troca',${trocas.length-1-ri})">✕</button></td>
+        </tr>`;
+      }).join('') + '</tbody></table></div>';
+  }
+}
+
+function editMotivo(tipo, idx) {
+  if(!S.cancelados) return;
+  const list = S.cancelados.filter(c=>c.tipo===tipo);
+  const item = list[idx];
+  if(!item) return;
+  const novo = prompt('Editar motivo:', item.motivo);
+  if(novo===null) return;
+  item.motivo = novo||'Não informado';
+  save();
+  renderCancelados();
+}
+
+function removerCancelado(tipo, idx) {
+  if(!S.cancelados) return;
+  const list = S.cancelados.filter(c=>c.tipo===tipo);
+  const item = list[idx];
+  if(!item) return;
+  if(!confirm('Remover este registro de cancelamento?')) return;
+  const globalIdx = S.cancelados.indexOf(item);
+  if(globalIdx!==-1) S.cancelados.splice(globalIdx,1);
+  save();
+  renderCancelados();
+  updateBadgeCancelados();
+}
+
+// ============================
+// SUBSTITUIR ITEM NA PRODUÇÃO
+// ============================
+function substituirItemFarmVenda(vid, idx) {
+  const f = S.farmVenda.find(x=>x.vendaId===vid);
+  if(!f) return;
+  const it = f.items[idx];
+  if(!it) return;
+  if(!S.items.length){alert('Nenhum item cadastrado na lista de itens.');return;}
+  const opcoes = S.items.map((item,i)=>`${i+1}. ${item.nome} (Farm: ${fmt(item.farm)}/un)`).join('\n');
+  const resp = prompt(`Substituir "${it.nome} x${it.qtd}"\nEscolha o número do novo item:\n\n${opcoes}`,'');
+  if(resp===null||resp.trim()==='') return;
+  const escolha = parseInt(resp)-1;
+  if(isNaN(escolha)||escolha<0||escolha>=S.items.length){alert('Número inválido.');return;}
+  const novoItem = S.items[escolha];
+  const novaQtd = parseInt(prompt(`Quantidade de "${novoItem.nome}"?`, it.qtd+''))||it.qtd;
+  f.items[idx] = {
+    nome: novoItem.nome,
+    qtd: novaQtd,
+    farmUnit: novoItem.farm,
+    farmTotal: novoItem.farm * novaQtd,
+    farmDone: false,
+    fabDone: false,
+    unidade: novoItem.unidade||'un'
+  };
+  save();
+  renderFarmVenda();
+  notify('Item substituído!','green');
+}
+
+function substituirItemFarmTroca(tid, idx) {
+  const f = S.farmTroca.find(x=>x.trocaId===tid);
+  if(!f) return;
+  const it = f.items[idx];
+  if(!it) return;
+  if(!S.items.length){alert('Nenhum item cadastrado na lista de itens.');return;}
+  const opcoes = S.items.map((item,i)=>`${i+1}. ${item.nome} (Farm: ${fmt(item.farm)}/un)`).join('\n');
+  const resp = prompt(`Substituir "${it.nome} x${it.qtd}"\nEscolha o número do novo item:\n\n${opcoes}`,'');
+  if(resp===null||resp.trim()==='') return;
+  const escolha = parseInt(resp)-1;
+  if(isNaN(escolha)||escolha<0||escolha>=S.items.length){alert('Número inválido.');return;}
+  const novoItem = S.items[escolha];
+  const novaQtd = parseInt(prompt(`Quantidade de "${novoItem.nome}"?`, it.qtd+''))||it.qtd;
+  f.items[idx] = {
+    nome: novoItem.nome,
+    qtd: novaQtd,
+    farmUnit: novoItem.farm,
+    farmTotal: novoItem.farm * novaQtd,
+    farmDone: false,
+    fabDone: false,
+    unidade: novoItem.unidade||'un'
+  };
+  save();
+  renderFarmTroca();
+  notify('Item substituído!','green');
+}
+
 // ============================
 // INIT
 // ============================
@@ -2318,6 +2563,7 @@ window.addEventListener('load', ()=>{
   renderTradeItems();
   refreshAllSelects();
   updateBadge();
+  updateBadgeCancelados();
   // Indica dado salvo
   const saved = localStorage.getItem(LS_KEY);
   if(saved) notify('✓ Dados carregados do armazenamento local','green');
