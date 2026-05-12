@@ -193,12 +193,36 @@
     box-shadow: 0 0 0 2px rgba(201,168,76,0.1);
   }
   input[type="checkbox"] {
-    width: auto;
-    accent-color: var(--gold);
-    width: 16px; height: 16px;
+    appearance: none;
+    -webkit-appearance: none;
+    width: 17px; height: 17px;
+    border: 2px solid var(--border2);
+    border-radius: 4px;
+    background: var(--bg4);
     cursor: pointer;
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.15s;
+  }
+  input[type="checkbox"]:hover {
+    border-color: var(--gold);
+  }
+  input[type="checkbox"]:checked {
+    background: var(--gold);
+    border-color: var(--gold);
+  }
+  input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    left: 3px; top: 0px;
+    width: 5px; height: 9px;
+    border: 2px solid #1a1400;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
   }
   label { font-size: 0.75rem; color: var(--text2); margin-bottom: 4px; display: block; letter-spacing: 0.5px; }
+  .check-row label { display: flex; margin-bottom: 0; letter-spacing: 0; }
   .form-group { margin-bottom: 12px; }
 
   /* BUTTONS */
@@ -371,10 +395,29 @@
     transition: all 0.15s;
   }
   .check-row.done {
-    opacity: 0.5;
+    background: var(--bg2);
+    border-color: transparent;
+  }
+  .check-row.done > div:first-child {
     text-decoration: line-through;
+    opacity: 0.4;
+  }
+  .check-row.done > div:not(:first-child),
+  .check-row.done label,
+  .check-row.done button {
+    opacity: 0.5;
   }
   .check-row input[type="checkbox"] { flex-shrink: 0; }
+  .check-row label {
+    display: flex !important;
+    align-items: center;
+    gap: 4px;
+    margin: 0 !important;
+    font-size: 0.75rem;
+    color: var(--text2);
+    white-space: nowrap;
+    cursor: pointer;
+  }
 
   /* EMPTY STATE */
   .empty {
@@ -1839,7 +1882,7 @@ function finalizarVenda() {
     const item=S.items.find(i=>i.id===x.itemId)||{valor:0,farm:0,nome:'?',unidade:'un'};
     const val = item.valor*x.qtd*(1-(x.descItem||0)/100);
     subtotal+=val;
-    farmItems.push({nome:item.nome,qtd:x.qtd,farmUnit:item.farm,farmTotal:item.farm*x.qtd,farmDone:false,fabDone:false,unidade:item.unidade||'un'});
+    farmItems.push({itemId:item.id,nome:item.nome,qtd:x.qtd,farmUnit:item.farm,farmTotal:item.farm*x.qtd,farmDone:false,fabDone:false,unidade:item.unidade||'un'});
     return {...x, nomeCached:item.nome, valUnit:item.valor, farmUnit:item.farm};
   });
   const total = subtotal*(1-descTotal/100);
@@ -1949,7 +1992,7 @@ function finalizarTroca() {
   const tid = uid();
   const farmItems = S.trocaMy.map(x=>{
     const item=S.items.find(i=>i.id===x.itemId)||{nome:'?',farm:0,unidade:'un'};
-    return {nome:item.nome,qtd:x.qtd,farmUnit:item.farm,farmTotal:item.farm*x.qtd,farmDone:false,fabDone:false,unidade:item.unidade||'un'};
+    return {itemId:x.itemId,nome:item.nome,qtd:x.qtd,farmUnit:item.farm,farmTotal:item.farm*x.qtd,farmDone:false,fabDone:false,unidade:item.unidade||'un'};
   });
   S.trocas.push({id:tid,player,playerId:pid,myItems:[...S.trocaMy],theirItems:[...S.trocaTheir],ts:new Date().toLocaleString('pt-BR'),status:'farm'});
   S.farmTroca.push({trocaId:tid,player,playerId:pid,items:farmItems,status:'farmando',ts:new Date().toLocaleString('pt-BR')});
@@ -2096,32 +2139,45 @@ function renderFarmVenda() {
     const tot = f.items.length;
     const done = f.items.filter(it=>it.farmDone&&it.fabDone).length;
     const falta = tot - done;
-    return '<div class="card" style="margin-bottom:12px;border-left:3px solid var(--gold);">'
-      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
-      + '<div>'
-      + '<span style="font-family:Cinzel,serif;color:var(--gold2);font-size:1rem;">' + f.cliente + '</span>'
-      + '<span style="color:var(--text3);font-size:0.75rem;margin-left:6px;">ID: ' + f.clienteId + '</span>'
-      + '<div style="font-size:0.72rem;color:var(--text3);margin-top:2px;">' + f.ts + '</div>'
-      + '</div>'
-      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
-      + '<span class="chip chip-teal" style="font-size:0.65rem;">' + done + '/' + tot + ' itens</span>'
-      + (falta>0 ? '<span class="chip chip-red" style="font-size:0.65rem;">⏳ ' + falta + ' faltando</span>' : '<span class="chip chip-green" style="font-size:0.65rem;">✓ Completo</span>')
-      + '<button class="btn btn-red btn-xs" onclick="cancelarFarmVenda(\'' + f.vendaId + '\')" title="Cancelar encomenda">🗑 Cancelar</button>'
-      + '</div></div>'
-      + f.items.map(function(it,i){
-        var tipo = it.unidade&&it.unidade!=='—'&&it.unidade!=='un' ? '<span style="color:var(--text3);font-size:0.7rem;margin-left:4px">🌿'+it.unidade+'</span>' : '';
-        return '<div class="check-row ' + (it.farmDone&&it.fabDone?'done':'') + '" style="flex-wrap:wrap;gap:6px;">'
-          + '<div style="flex:2;min-width:120px;"><strong>' + it.nome + '</strong><span style="color:var(--text3)"> x' + it.qtd + '</span>' + tipo + '</div>'
-          + '<div style="font-size:0.75rem;color:var(--teal2);white-space:nowrap;">Farm: ' + fmt(it.farmTotal) + '</div>'
-          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.farmDone?'checked':'') + ' onchange="toggleFarmVenda(\\\'' + f.vendaId + '\\\''  + ',' + i + ',\'farm\',this.checked)"> Farmado</label>'
-          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.fabDone?'checked':'') + ' onchange="toggleFarmVenda(\\\'' + f.vendaId + '\\\''  + ',' + i + ',\'fab\',this.checked)"> Fabricado</label>'
-          + '<button onclick="substituirItemFarmVenda(\\\'' + f.vendaId + '\\\'' + ',' + i + ')" title="Trocar item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--teal)\';this.style.color=\'var(--teal2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">🔄 Trocar</button>'
-          + '<button onclick="removerItemFarmVenda(\\\'' + f.vendaId + '\\\'' + ',' + i + ')" title="Remover item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--red)\';this.style.color=\'var(--red2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">✕</button>'
-          + '</div>';
-      }).join('')
-      + '<div style="margin-top:10px;display:flex;justify-content:flex-end;">'
-      + '<button class="btn btn-green btn-sm" onclick="completeFarmVenda(\'' + f.vendaId + '\')">✓ Concluído → Entrega</button>'
-      + '</div></div>';
+    return `
+    <div class="card" style="margin-bottom:12px;border-left:3px solid var(--gold);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <div>
+          <span style="font-family:Cinzel,serif;color:var(--gold2);font-size:1rem;">${f.cliente}</span>
+          <span style="color:var(--text3);font-size:0.75rem;margin-left:6px;">ID: ${f.clienteId}</span>
+          <div style="font-size:0.72rem;color:var(--text3);margin-top:2px;">${f.ts}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span class="chip chip-teal" style="font-size:0.65rem;">${done}/${tot} itens</span>
+          ${falta>0 ? `<span class="chip chip-red" style="font-size:0.65rem;">⏳ ${falta} faltando</span>` : '<span class="chip chip-green" style="font-size:0.65rem;">✓ Completo</span>'}
+          <button class="btn btn-red btn-xs" onclick="cancelarFarmVenda('${f.vendaId}')" title="Cancelar encomenda">🗑 Cancelar</button>
+        </div>
+      </div>
+      ${f.items.map((it,i)=>{
+        const liveItem = it.itemId ? S.items.find(x=>x.id===it.itemId) : null;
+        const nome = liveItem ? liveItem.nome : it.nome;
+        const farmUnit = liveItem ? liveItem.farm : it.farmUnit;
+        const farmTotal = farmUnit * it.qtd;
+        const unidade = liveItem ? (liveItem.unidade||'un') : (it.unidade||'un');
+        const tipo = unidade&&unidade!=='—'&&unidade!=='un' ? `<span style="color:var(--text3);font-size:0.7rem;margin-left:4px">🌿${unidade}</span>` : '';
+        return `
+        <div class="check-row ${it.farmDone&&it.fabDone?'done':''}">
+          <div style="flex:2;min-width:120px;"><strong>${nome}</strong><span style="color:var(--text3)"> x${it.qtd}</span>${tipo}</div>
+          <div style="font-size:0.75rem;color:var(--teal2);white-space:nowrap;">Farm: ${fmt(farmTotal)}</div>
+          <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;">
+            <input type="checkbox" ${it.farmDone?'checked':''} onchange="toggleFarmVenda('${f.vendaId}',${i},'farm',this.checked)"> Farmado
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;">
+            <input type="checkbox" ${it.fabDone?'checked':''} onchange="toggleFarmVenda('${f.vendaId}',${i},'fab',this.checked)"> Fabricado
+          </label>
+          <button onclick="substituirItemFarmVenda('${f.vendaId}',${i})" title="Trocar item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;">🔄 Trocar</button>
+          <button onclick="removerItemFarmVenda('${f.vendaId}',${i})" title="Remover item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;">✕</button>
+        </div>`;
+      }).join('')}
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+        <button class="btn btn-green btn-sm" onclick="completeFarmVenda('${f.vendaId}')">✓ Concluído → Entrega</button>
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -2205,32 +2261,45 @@ function renderFarmTroca() {
     const tot = f.items.length;
     const done = f.items.filter(it=>it.farmDone&&it.fabDone).length;
     const falta = tot - done;
-    return '<div class="card" style="margin-bottom:12px;border-left:3px solid var(--teal);">'
-      + '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap;">'
-      + '<div>'
-      + '<span style="font-family:Cinzel,serif;color:var(--teal2);font-size:1rem;">' + f.player + '</span>'
-      + '<span style="color:var(--text3);font-size:0.75rem;margin-left:6px;">ID: ' + f.playerId + '</span>'
-      + '<div style="font-size:0.72rem;color:var(--text3);margin-top:2px;">' + f.ts + '</div>'
-      + '</div>'
-      + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
-      + '<span class="chip chip-teal" style="font-size:0.65rem;">' + done + '/' + tot + ' itens</span>'
-      + (falta>0 ? '<span class="chip chip-red" style="font-size:0.65rem;">⏳ ' + falta + ' faltando</span>' : '<span class="chip chip-green" style="font-size:0.65rem;">✓ Completo</span>')
-      + '<button class="btn btn-red btn-xs" onclick="cancelarFarmTroca(\'' + f.trocaId + '\')" title="Cancelar troca">🗑 Cancelar</button>'
-      + '</div></div>'
-      + f.items.map(function(it,i){
-        var tipo = it.unidade&&it.unidade!=='—'&&it.unidade!=='un' ? '<span style="color:var(--text3);font-size:0.7rem;margin-left:4px">🌿'+it.unidade+'</span>' : '';
-        return '<div class="check-row ' + (it.farmDone&&it.fabDone?'done':'') + '" style="flex-wrap:wrap;gap:6px;">'
-          + '<div style="flex:2;min-width:120px;"><strong>' + it.nome + '</strong><span style="color:var(--text3)"> x' + it.qtd + '</span>' + tipo + '</div>'
-          + '<div style="font-size:0.75rem;color:var(--teal2);white-space:nowrap;">Farm: ' + fmt(it.farmTotal) + '</div>'
-          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.farmDone?'checked':'') + ' onchange="toggleFarmTroca(\\\'' + f.trocaId + '\\\''  + ',' + i + ',\'farm\',this.checked)"> Farmado</label>'
-          + '<label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;"><input type="checkbox" ' + (it.fabDone?'checked':'') + ' onchange="toggleFarmTroca(\\\'' + f.trocaId + '\\\''  + ',' + i + ',\'fab\',this.checked)"> Fabricado</label>'
-          + '<button onclick="substituirItemFarmTroca(\\\'' + f.trocaId + '\\\'' + ',' + i + ')" title="Trocar item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--teal)\';this.style.color=\'var(--teal2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">🔄 Trocar</button>'
-          + '<button onclick="removerItemFarmTroca(\\\'' + f.trocaId + '\\\'' + ',' + i + ')" title="Remover item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;transition:all 0.15s;" onmouseover="this.style.borderColor=\'var(--red)\';this.style.color=\'var(--red2)\'" onmouseout="this.style.borderColor=\'var(--border2)\';this.style.color=\'var(--text3)\'">✕</button>'
-          + '</div>';
-      }).join('')
-      + '<div style="margin-top:10px;display:flex;justify-content:flex-end;">'
-      + '<button class="btn btn-green btn-sm" onclick="completeFarmTroca(\'' + f.trocaId + '\')">✓ Concluído → Entrega</button>'
-      + '</div></div>';
+    return `
+    <div class="card" style="margin-bottom:12px;border-left:3px solid var(--teal);">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+        <div>
+          <span style="font-family:Cinzel,serif;color:var(--teal2);font-size:1rem;">${f.player}</span>
+          <span style="color:var(--text3);font-size:0.75rem;margin-left:6px;">ID: ${f.playerId}</span>
+          <div style="font-size:0.72rem;color:var(--text3);margin-top:2px;">${f.ts}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span class="chip chip-teal" style="font-size:0.65rem;">${done}/${tot} itens</span>
+          ${falta>0 ? `<span class="chip chip-red" style="font-size:0.65rem;">⏳ ${falta} faltando</span>` : '<span class="chip chip-green" style="font-size:0.65rem;">✓ Completo</span>'}
+          <button class="btn btn-red btn-xs" onclick="cancelarFarmTroca('${f.trocaId}')" title="Cancelar troca">🗑 Cancelar</button>
+        </div>
+      </div>
+      ${f.items.map((it,i)=>{
+        const liveItem = it.itemId ? S.items.find(x=>x.id===it.itemId) : null;
+        const nome = liveItem ? liveItem.nome : it.nome;
+        const farmUnit = liveItem ? liveItem.farm : it.farmUnit;
+        const farmTotal = farmUnit * it.qtd;
+        const unidade = liveItem ? (liveItem.unidade||'un') : (it.unidade||'un');
+        const tipo = unidade&&unidade!=='—'&&unidade!=='un' ? `<span style="color:var(--text3);font-size:0.7rem;margin-left:4px">🌿${unidade}</span>` : '';
+        return `
+        <div class="check-row ${it.farmDone&&it.fabDone?'done':''}">
+          <div style="flex:2;min-width:120px;"><strong>${nome}</strong><span style="color:var(--text3)"> x${it.qtd}</span>${tipo}</div>
+          <div style="font-size:0.75rem;color:var(--teal2);white-space:nowrap;">Farm: ${fmt(farmTotal)}</div>
+          <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;">
+            <input type="checkbox" ${it.farmDone?'checked':''} onchange="toggleFarmTroca('${f.trocaId}',${i},'farm',this.checked)"> Farmado
+          </label>
+          <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2);white-space:nowrap;">
+            <input type="checkbox" ${it.fabDone?'checked':''} onchange="toggleFarmTroca('${f.trocaId}',${i},'fab',this.checked)"> Fabricado
+          </label>
+          <button onclick="substituirItemFarmTroca('${f.trocaId}',${i})" title="Trocar item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;">🔄 Trocar</button>
+          <button onclick="removerItemFarmTroca('${f.trocaId}',${i})" title="Remover item" style="background:transparent;border:1px solid var(--border2);color:var(--text3);padding:2px 7px;border-radius:4px;cursor:pointer;font-size:0.7rem;flex-shrink:0;">✕</button>
+        </div>`;
+      }).join('')}
+      <div style="margin-top:10px;display:flex;justify-content:flex-end;">
+        <button class="btn btn-green btn-sm" onclick="completeFarmTroca('${f.trocaId}')">✓ Concluído → Entrega</button>
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -2712,6 +2781,9 @@ function confirmarEdicao() {
     save();
     renderItems();
     refreshAllSelects();
+    // Atualiza abas de produção para refletir novo nome/farm/valor
+    renderFarmVenda();
+    renderFarmTroca();
     notify('Item atualizado!','green');
   } else {
     const item = S.tradeItems.find(i=>i.id===_editCtx.id);
