@@ -422,11 +422,144 @@
     .grid-4 { grid-template-columns: repeat(2,1fr); }
     .grid-3 { grid-template-columns: 1fr 1fr; }
   }
+
+  /* ===== MOBILE SIDEBAR ===== */
+  #sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 99;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+  #mobile-topbar {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 56px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    z-index: 98;
+  }
+
+  #hamburger {
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    width: 40px; height: 40px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex-shrink: 0;
+    transition: border-color 0.2s;
+  }
+  #hamburger:hover { border-color: var(--gold); }
+  #hamburger span {
+    display: block;
+    width: 20px; height: 2px;
+    background: var(--gold2);
+    border-radius: 2px;
+    transition: all 0.3s;
+  }
+  #hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  #hamburger.open span:nth-child(2) { opacity: 0; }
+  #hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  #mobile-logo-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+  #mobile-logo-img {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold);
+    flex-shrink: 0;
+  }
+  #mobile-logo-text {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, var(--gold), var(--gold3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #mobile-page-name {
+    font-size: 0.7rem;
+    color: var(--text3);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 700px) {
+    #sidebar {
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 100;
+    }
+    #sidebar.open {
+      transform: translateX(0);
+    }
+    #sidebar-overlay.open {
+      display: block;
+    }
+    #main {
+      margin-left: 0 !important;
+      padding: 80px 12px 24px;
+    }
+    #mobile-topbar {
+      display: flex;
+    }
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: repeat(2,1fr); }
+    .flex { flex-wrap: wrap; }
+    .trade-col { min-width: 0; }
+  }
 </style>
 </head>
 <body>
 
 <div id="notif"></div>
+
+<!-- MOBILE TOP BAR -->
+<div id="mobile-topbar">
+  <button id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <button id="mobile-logo-btn" onclick="toggleSidebar()">
+    <img id="mobile-logo-img" src="" alt="Kali Shop" onerror="this.style.display='none'">
+    <span id="mobile-logo-text">⚔ KALI SHOP</span>
+  </button>
+  <span id="mobile-page-name">Início</span>
+</div>
+
+<!-- OVERLAY -->
+<div id="sidebar-overlay" onclick="closeSidebar()"></div>
 
 <!-- SIDEBAR -->
 <nav id="sidebar">
@@ -948,6 +1081,29 @@
 
 <script>
 // ============================
+// MOBILE SIDEBAR
+// ============================
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const hamburger = document.getElementById('hamburger');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('open');
+  hamburger.classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+// Sync logo icon from favicon
+window.addEventListener('load', ()=>{
+  const favicon = document.querySelector('link[rel="icon"]');
+  if(favicon) document.getElementById('mobile-logo-img').src = favicon.href;
+});
+
+// ============================
 // PERSISTÊNCIA LOCAL (localStorage)
 // ============================
 const LS_KEY = 'kalishop_v1';
@@ -1050,12 +1206,34 @@ function notify(msg, color='gold') {
 // ============================
 // NAVIGATION
 // ============================
+const PAGE_NAMES = {
+  'reg-items': 'Registro de Itens',
+  'reg-trade': 'Reg. Trocas',
+  'estoque': 'Estoque',
+  'calc-venda': 'Calc. Vendas',
+  'calc-troca': 'Calc. Trocas',
+  'vendas': 'Vendas',
+  'trocas': 'Trocas',
+  'farm-venda': 'Farm Venda',
+  'farm-troca': 'Farm Troca',
+  'entrega-venda': 'Entrega Venda',
+  'entrega-troca': 'Entrega Troca',
+  'hist-vendas': 'Hist. Vendas',
+  'hist-trocas': 'Hist. Trocas',
+  'total': 'Dashboard',
+};
+
 function goTo(id) {
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const page = document.getElementById('page-'+id);
   if(page) page.classList.add('active');
   event.currentTarget && event.currentTarget.classList.add('active');
+  // Update mobile page name
+  const pnEl = document.getElementById('mobile-page-name');
+  if(pnEl) pnEl.textContent = PAGE_NAMES[id] || '';
+  // Close sidebar on mobile
+  closeSidebar();
   // Refresh page
   const refreshMap = {
     'estoque': refreshEstoque,
@@ -1689,30 +1867,70 @@ function updateBadge() {
 // ============================
 // FARM VENDA
 // ============================
-function renderFarmVenda() {
-  const el = document.getElementById('fv-list');
-  const ativos = S.farmVenda.filter(f=>f.status==='farmando');
-  if(!ativos.length){el.innerHTML='<div class="empty"><div class="empty-icon">⛏️</div>Nenhuma encomenda de venda em produção</div>';return;}
-
-  // Calcular totais de farm
-  let totalItens = 0, totalFarmado = 0, totalFaltando = 0;
+function buildFarmProgress(ativos) {
+  // Totals
+  let totalItens = 0, totalFarmado = 0;
   let totalFarmValor = 0, faltandoFarmValor = 0;
+  // Per-type: key = unidade
+  const byType = {};
+
   ativos.forEach(f=>{
     f.items.forEach(it=>{
+      const tipo = it.unidade && it.unidade !== '—' && it.unidade !== 'un' ? it.unidade : 'Geral';
+      if(!byType[tipo]) byType[tipo] = {totalItens:0,totalFarmado:0,totalFaltando:0,totalFarm:0,faltandoFarm:0};
+      byType[tipo].totalItens += it.qtd;
+      byType[tipo].totalFarm += it.farmTotal||0;
       totalItens += it.qtd;
       totalFarmValor += it.farmTotal||0;
       if(it.farmDone && it.fabDone){
         totalFarmado += it.qtd;
+        byType[tipo].totalFarmado += it.qtd;
       } else {
-        totalFaltando += it.qtd;
+        byType[tipo].totalFaltando += it.qtd;
+        byType[tipo].faltandoFarm += it.farmTotal||0;
         faltandoFarmValor += it.farmTotal||0;
       }
     });
   });
-  const pct = totalItens>0 ? Math.round((totalFarmado/totalItens)*100) : 0;
 
-  el.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+  const pct = totalItens>0 ? Math.round((totalFarmado/totalItens)*100) : 0;
+  const pctColor = pct===100?'var(--green2)':pct>50?'var(--gold2)':'var(--red2)';
+
+  // Per-type progress bars (only if more than one type or non-generic)
+  const typeKeys = Object.keys(byType);
+  const showTypes = typeKeys.length>0 && !(typeKeys.length===1 && typeKeys[0]==='Geral');
+
+  const typeHtml = showTypes ? typeKeys.map(tipo=>{
+    const t = byType[tipo];
+    const p = t.totalItens>0?Math.round((t.totalFarmado/t.totalItens)*100):0;
+    const pc = p===100?'var(--green2)':p>50?'var(--gold2)':'var(--red2)';
+    return `<div style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">
+        <span style="font-size:0.78rem;color:var(--text2);font-weight:600;">
+          ${tipo === 'Geral' ? '🔹 Geral' :
+            tipo.toLowerCase().includes('tirosina') ? '🧪 '+tipo :
+            tipo.toLowerCase().includes('fortress') || tipo.toLowerCase().includes('fort') ? '🏰 '+tipo :
+            '🌿 '+tipo}
+        </span>
+        <div style="display:flex;gap:12px;align-items:center;font-size:0.72rem;color:var(--text3);">
+          <span>Total: <strong style="color:var(--text)">${t.totalItens}</strong></span>
+          <span style="color:var(--green2)">✓ ${t.totalFarmado}</span>
+          <span style="color:var(--red2)">⏳ ${t.totalFaltando}</span>
+          <strong style="color:${pc};font-family:'Orbitron',monospace;font-size:0.8rem;">${p}%</strong>
+        </div>
+      </div>
+      <div style="background:var(--bg);border-radius:20px;height:7px;overflow:hidden;">
+        <div style="height:100%;width:${p}%;background:${pc};border-radius:20px;transition:width 0.4s;"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:4px;font-size:0.68rem;color:var(--text3);">
+        <span>Farm total: <strong style="color:var(--teal2)">${fmt(t.totalFarm)}</strong></span>
+        <span>Faltando: <strong style="color:var(--red2)">${fmt(t.faltandoFarm)}</strong></span>
+      </div>
+    </div>`;
+  }).join('') : '';
+
+  return `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;">
       <div class="stat-card">
         <div class="stat-val" style="font-size:1.1rem;">${totalItens}</div>
         <div class="stat-label">Total de Itens</div>
@@ -1722,24 +1940,39 @@ function renderFarmVenda() {
         <div class="stat-label">✓ Concluídos</div>
       </div>
       <div class="stat-card" style="border-color:rgba(224,82,82,0.4)">
-        <div class="stat-val" style="font-size:1.1rem;color:var(--red2)">${totalFaltando}</div>
+        <div class="stat-val" style="font-size:1.1rem;color:var(--red2)">${totalItens-totalFarmado}</div>
         <div class="stat-label">⏳ Faltando</div>
       </div>
     </div>
-    <div class="card" style="margin-bottom:16px;padding:12px 16px;">
+    <div class="card" style="margin-bottom:14px;padding:14px 16px;">
+      <div style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);font-weight:600;">
+        Progresso Geral — Farm + Fabricação
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span style="font-size:0.75rem;color:var(--text2);letter-spacing:1px;text-transform:uppercase;">Progresso Geral</span>
-        <span style="font-family:'Orbitron',monospace;font-size:0.95rem;color:${pct===100?'var(--green2)':pct>50?'var(--gold2)':'var(--red2)'};">${pct}%</span>
+        <span style="font-size:0.8rem;color:var(--text2);">Todos os Itens</span>
+        <span style="font-family:'Orbitron',monospace;font-size:1rem;color:${pctColor};">${pct}%</span>
       </div>
-      <div style="background:var(--bg4);border-radius:20px;height:10px;overflow:hidden;">
-        <div style="height:100%;width:${pct}%;background:${pct===100?'var(--green2)':pct>50?'var(--gold2)':'var(--red2)'};border-radius:20px;transition:width 0.4s;"></div>
+      <div style="background:var(--bg4);border-radius:20px;height:12px;overflow:hidden;margin-bottom:8px;">
+        <div style="height:100%;width:${pct}%;background:${pctColor};border-radius:20px;transition:width 0.4s;"></div>
       </div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;color:var(--text3);">
+      <div style="display:flex;justify-content:space-between;margin-bottom:${showTypes?'14px':'0'};font-size:0.72rem;color:var(--text3);">
         <span>Farm total: <strong style="color:var(--teal2)">${fmt(totalFarmValor)}</strong></span>
         <span>Farm faltando: <strong style="color:var(--red2)">${fmt(faltandoFarmValor)}</strong></span>
       </div>
-    </div>
-  ` + ativos.map(f=>{
+      ${showTypes ? `
+        <div style="border-top:1px solid var(--border);padding-top:12px;">
+          <div style="font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:10px;font-weight:600;">Progresso por Tipo de Farm</div>
+          ${typeHtml}
+        </div>` : ''}
+    </div>`;
+}
+
+function renderFarmVenda() {
+  const el = document.getElementById('fv-list');
+  const ativos = S.farmVenda.filter(f=>f.status==='farmando');
+  if(!ativos.length){el.innerHTML='<div class="empty"><div class="empty-icon">⛏️</div>Nenhuma encomenda de venda em produção</div>';return;}
+
+  el.innerHTML = buildFarmProgress(ativos) + ativos.map(f=>{
     const tot = f.items.length;
     const done = f.items.filter(it=>it.farmDone&&it.fabDone).length;
     const falta = tot - done;
@@ -1747,7 +1980,7 @@ function renderFarmVenda() {
     <div class="card" style="margin-bottom:12px;">
       <div class="flex flex-between flex-center" style="margin-bottom:8px;">
         <div><span style="font-family:Cinzel,serif;color:var(--gold2)">${f.cliente}</span> <span style="color:var(--text3);font-size:0.75rem">ID: ${f.clienteId}</span></div>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span class="chip chip-teal" style="font-size:0.65rem;">${done}/${tot} itens</span>
           ${falta>0?`<span class="chip chip-red" style="font-size:0.65rem;">⏳ ${falta} faltando</span>`:`<span class="chip chip-green" style="font-size:0.65rem;">✓ Completo</span>`}
           <div style="font-size:0.75rem;color:var(--text3)">${f.ts}</div>
@@ -1755,7 +1988,7 @@ function renderFarmVenda() {
       </div>
       ${f.items.map((it,i)=>`
         <div class="check-row ${it.farmDone&&it.fabDone?'done':''}">
-          <div style="flex:2"><strong>${it.nome}</strong> <span style="color:var(--text3)">x${it.qtd}</span></div>
+          <div style="flex:2"><strong>${it.nome}</strong> <span style="color:var(--text3)">x${it.qtd}</span>${it.unidade&&it.unidade!=='—'&&it.unidade!=='un'?`<span style="color:var(--text3);font-size:0.7rem;margin-left:4px">🌿${it.unidade}</span>`:''}</div>
           <div style="font-size:0.75rem;color:var(--teal2)">Farm: ${fmt(it.farmTotal)}</div>
           <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2)">
             <input type="checkbox" ${it.farmDone?'checked':''} onchange="toggleFarmVenda('${f.vendaId}',${i},'farm',this.checked)"> Farmado
@@ -1800,52 +2033,7 @@ function renderFarmTroca() {
   const ativos = S.farmTroca.filter(f=>f.status==='farmando');
   if(!ativos.length){el.innerHTML='<div class="empty"><div class="empty-icon">🌾</div>Nenhuma troca em produção</div>';return;}
 
-  // Calcular totais de farm
-  let totalItens = 0, totalFarmado = 0, totalFaltando = 0;
-  let totalFarmValor = 0, faltandoFarmValor = 0;
-  ativos.forEach(f=>{
-    f.items.forEach(it=>{
-      totalItens += it.qtd;
-      totalFarmValor += it.farmTotal||0;
-      if(it.farmDone && it.fabDone){
-        totalFarmado += it.qtd;
-      } else {
-        totalFaltando += it.qtd;
-        faltandoFarmValor += it.farmTotal||0;
-      }
-    });
-  });
-  const pct = totalItens>0 ? Math.round((totalFarmado/totalItens)*100) : 0;
-
-  el.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
-      <div class="stat-card">
-        <div class="stat-val" style="font-size:1.1rem;">${totalItens}</div>
-        <div class="stat-label">Total de Itens</div>
-      </div>
-      <div class="stat-card" style="border-color:rgba(76,175,130,0.4)">
-        <div class="stat-val" style="font-size:1.1rem;color:var(--green2)">${totalFarmado}</div>
-        <div class="stat-label">✓ Concluídos</div>
-      </div>
-      <div class="stat-card" style="border-color:rgba(224,82,82,0.4)">
-        <div class="stat-val" style="font-size:1.1rem;color:var(--red2)">${totalFaltando}</div>
-        <div class="stat-label">⏳ Faltando</div>
-      </div>
-    </div>
-    <div class="card" style="margin-bottom:16px;padding:12px 16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <span style="font-size:0.75rem;color:var(--text2);letter-spacing:1px;text-transform:uppercase;">Progresso Geral</span>
-        <span style="font-family:'Orbitron',monospace;font-size:0.95rem;color:${pct===100?'var(--green2)':pct>50?'var(--gold2)':'var(--red2)'};">${pct}%</span>
-      </div>
-      <div style="background:var(--bg4);border-radius:20px;height:10px;overflow:hidden;">
-        <div style="height:100%;width:${pct}%;background:${pct===100?'var(--green2)':pct>50?'var(--gold2)':'var(--red2)'};border-radius:20px;transition:width 0.4s;"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:0.72rem;color:var(--text3);">
-        <span>Farm total: <strong style="color:var(--teal2)">${fmt(totalFarmValor)}</strong></span>
-        <span>Farm faltando: <strong style="color:var(--red2)">${fmt(faltandoFarmValor)}</strong></span>
-      </div>
-    </div>
-  ` + ativos.map(f=>{
+  el.innerHTML = buildFarmProgress(ativos) + ativos.map(f=>{
     const tot = f.items.length;
     const done = f.items.filter(it=>it.farmDone&&it.fabDone).length;
     const falta = tot - done;
@@ -1853,7 +2041,7 @@ function renderFarmTroca() {
     <div class="card" style="margin-bottom:12px;">
       <div class="flex flex-between flex-center" style="margin-bottom:8px;">
         <div><span style="font-family:Cinzel,serif;color:var(--teal2)">${f.player}</span> <span style="color:var(--text3);font-size:0.75rem">ID: ${f.playerId}</span></div>
-        <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
           <span class="chip chip-teal" style="font-size:0.65rem;">${done}/${tot} itens</span>
           ${falta>0?`<span class="chip chip-red" style="font-size:0.65rem;">⏳ ${falta} faltando</span>`:`<span class="chip chip-green" style="font-size:0.65rem;">✓ Completo</span>`}
           <div style="font-size:0.75rem;color:var(--text3)">${f.ts}</div>
@@ -1861,7 +2049,7 @@ function renderFarmTroca() {
       </div>
       ${f.items.map((it,i)=>`
         <div class="check-row ${it.farmDone&&it.fabDone?'done':''}">
-          <div style="flex:2"><strong>${it.nome}</strong> <span style="color:var(--text3)">x${it.qtd}</span></div>
+          <div style="flex:2"><strong>${it.nome}</strong> <span style="color:var(--text3)">x${it.qtd}</span>${it.unidade&&it.unidade!=='—'&&it.unidade!=='un'?`<span style="color:var(--text3);font-size:0.7rem;margin-left:4px">🌿${it.unidade}</span>`:''}</div>
           <div style="font-size:0.75rem;color:var(--teal2)">Farm: ${fmt(it.farmTotal)}</div>
           <label style="display:flex;align-items:center;gap:4px;margin:0;font-size:0.75rem;color:var(--text2)">
             <input type="checkbox" ${it.farmDone?'checked':''} onchange="toggleFarmTroca('${f.trocaId}',${i},'farm',this.checked)"> Farmado
