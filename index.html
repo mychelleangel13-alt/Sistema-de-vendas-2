@@ -682,7 +682,7 @@
   <div class="sidebar-section">Resumo</div>
   <div class="nav-item" onclick="goTo('total')"><span class="icon">📊</span>Total</div>
   <div class="nav-item" onclick="goTo('total-kk')"><span class="icon">💰</span>Total KK</div>
-  <div class="nav-item" onclick="goTo('cancelados')"><span class="icon">🚫</span>Cancelados<span id="badge-cancelados" class="nav-badge" style="display:none;background:var(--red)">0</span></div>
+  <div class="nav-item" onclick="goTo('cancelados')"><span class="icon">🚫</span>Cancelados</div>
 
   <div class="sidebar-section">Dados</div>
   <div class="nav-item" onclick="exportarDados()"><span class="icon">💾</span>Exportar Backup</div>
@@ -2475,13 +2475,9 @@ function copiarCronogramaKK() {
   });
 
   let texto = 'CRONOGRAMA DE PAGAMENTOS\n';
-  ordem.forEach(key=>{
-    const g = grupos[key];
-    texto += `\n${g.player} (ID: ${g.playerId})\n`;
-    g.items.forEach(e=>{
-      const status = e.pago ? '✅ PAGO' : '❌ DEVENDO';
-      texto += `${fmtDate(e.dataReceber)} — ${brl(e.total)} — ${status}\n`;
-    });
+  list.forEach(e=>{
+    const status = e.pago ? '✅ PAGO' : '❌ DEVENDO';
+    texto += `${fmtDate(e.dataReceber)} — ${brl(e.total)} — ${status}\n`;
   });
   texto += `\nTotal em aberto: ${brl(totalDevendo)}`;
   if(totalPago > 0) texto += `\nTotal pago: ${brl(totalPago)}`;
