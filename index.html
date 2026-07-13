@@ -1070,11 +1070,25 @@
     <div class="grid-2">
       <div class="form-group">
         <label>Data para Envio (da moeda do jogo)</label>
-        <input id="kk-data-envio" type="date">
+        <input id="kk-data-envio" type="date" onchange="reaplicarPrazoSeMarcado()">
       </div>
       <div class="form-group">
         <label>Data para Receber (o dinheiro real)</label>
-        <input id="kk-data-receber" type="date">
+        <input id="kk-data-receber" type="date" onchange="limparAutoPrazo()">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label style="margin-bottom:6px;">Prazo automático p/ receber (após a data de envio)</label>
+      <div class="flex gap-12" style="flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:8px;margin:0;cursor:pointer;">
+          <input type="checkbox" id="kk-prazo-1sem" onchange="aplicarPrazoKK('1sem')" style="width:auto;">
+          1 semana (próxima segunda)
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;margin:0;cursor:pointer;">
+          <input type="checkbox" id="kk-prazo-2sem" onchange="aplicarPrazoKK('2sem')" style="width:auto;">
+          2 semanas (2ª sexta)
+        </label>
       </div>
     </div>
 
@@ -1147,6 +1161,21 @@
 <div class="page" id="page-entrega-kk">
   <div class="page-title">💰 Entrega KK</div>
   <div class="page-sub">MARQUE QUANDO ENTREGAR A MOEDA E QUANDO RECEBER O PAGAMENTO</div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title flex flex-between flex-center" style="border-bottom:none;">
+      <span>📅 Cronograma</span>
+      <button class="btn btn-teal btn-xs" onclick="copiarCronogramaKK()">📋 Copiar Cronograma</button>
+    </div>
+    <div class="flex gap-12" style="margin-bottom:12px;flex-wrap:wrap;">
+      <div style="font-size:0.8rem;color:var(--text2)">Em aberto: <strong id="kk-crono-devendo" style="color:var(--red2)">R$ 0,00</strong></div>
+      <div style="font-size:0.8rem;color:var(--text2)">Pago: <strong id="kk-crono-pago" style="color:var(--green2)">R$ 0,00</strong></div>
+    </div>
+    <div id="kk-cronograma">
+      <div class="empty"><div class="empty-icon">📅</div>Nenhum valor programado</div>
+    </div>
+  </div>
+
   <div id="ekk-list">
     <div class="empty"><div class="empty-icon">💰</div>Nenhuma venda KK aguardando entrega</div>
   </div>
@@ -2213,6 +2242,71 @@ function calcKK() {
   document.getElementById('kk-total').textContent = brl(total);
 }
 
+// ============================
+// PRAZO AUTOMÁTICO DE RECEBIMENTO (1 semana / 2 semanas)
+// ============================
+function parseDateLocal(str) {
+  // 'YYYY-MM-DD' -> Date local (evita bug de fuso horário)
+  const p = str.split('-');
+  if(p.length!==3) return null;
+  return new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+}
+function toDateInputValue(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function proximoDiaSemana(base, targetDow) {
+  // retorna a próxima data (estritamente após 'base') cujo dia da semana é targetDow (0=Dom...6=Sáb)
+  const d = new Date(base.getTime());
+  do {
+    d.setDate(d.getDate()+1);
+  } while (d.getDay() !== targetDow);
+  return d;
+}
+function aplicarPrazoKK(tipo) {
+  const chk1 = document.getElementById('kk-prazo-1sem');
+  const chk2 = document.getElementById('kk-prazo-2sem');
+  const envioEl = document.getElementById('kk-data-envio');
+  const receberEl = document.getElementById('kk-data-receber');
+
+  // torna os checkboxes mutuamente exclusivos
+  if(tipo==='1sem' && chk1.checked) chk2.checked=false;
+  if(tipo==='2sem' && chk2.checked) chk1.checked=false;
+
+  if(!chk1.checked && !chk2.checked) return; // ambos desmarcados, não faz nada
+
+  if(!envioEl.value) {
+    notify('Preencha primeiro a Data para Envio da moeda','red');
+    chk1.checked=false; chk2.checked=false;
+    return;
+  }
+
+  const base = parseDateLocal(envioEl.value);
+  let dataFinal;
+  if(chk1.checked) {
+    // próxima segunda-feira após a data de envio
+    dataFinal = proximoDiaSemana(base, 1);
+  } else {
+    // 2ª sexta-feira após a data de envio (primeira sexta + 7 dias)
+    const primeiraSexta = proximoDiaSemana(base, 5);
+    dataFinal = new Date(primeiraSexta.getTime());
+    dataFinal.setDate(dataFinal.getDate()+7);
+  }
+  receberEl.value = toDateInputValue(dataFinal);
+}
+function limparAutoPrazo() {
+  // se o usuário editar a data manualmente, desmarca as caixinhas de prazo automático
+  document.getElementById('kk-prazo-1sem').checked=false;
+  document.getElementById('kk-prazo-2sem').checked=false;
+}
+function reaplicarPrazoSeMarcado() {
+  // se a data de envio mudar e alguma caixinha de prazo já estiver marcada, recalcula a data de receber
+  if(document.getElementById('kk-prazo-1sem').checked) aplicarPrazoKK('1sem');
+  else if(document.getElementById('kk-prazo-2sem').checked) aplicarPrazoKK('2sem');
+}
+
 function finalizarVendaKK() {
   const player = document.getElementById('kk-player').value.trim()||'Sem nome';
   const pid = document.getElementById('kk-id').value.trim()||'—';
@@ -2234,6 +2328,8 @@ function finalizarVendaKK() {
   document.getElementById('kk-troca').checked=false;
   document.getElementById('kk-data-envio').value='';
   document.getElementById('kk-data-receber').value='';
+  document.getElementById('kk-prazo-1sem').checked=false;
+  document.getElementById('kk-prazo-2sem').checked=false;
   calcKK();
   save();
   renderVendaKKAberto();
@@ -2266,7 +2362,8 @@ function renderEntregaKK() {
   const el = document.getElementById('ekk-list');
   if(!el) return;
   const pendentes = S.entregasKK.filter(e=>!(e.entregue&&e.pago));
-  if(!pendentes.length){el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Nenhuma venda KK aguardando entrega</div>';return;}
+  if(!pendentes.length){el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Nenhuma venda KK aguardando entrega</div>';}
+  else {
   el.innerHTML = pendentes.map(e=>`
     <div class="card" style="margin-bottom:10px;">
       <div class="flex flex-between flex-center" style="flex-wrap:wrap;gap:8px;">
@@ -2293,12 +2390,132 @@ function renderEntregaKK() {
         ${e.pago?'<span class="chip chip-green">✓ Pago</span>':'<span class="chip chip-red">Pendente</span>'}
       </div>
     </div>`).join('');
+  }
+  renderCronogramaKK();
+}
+
+// ============================
+// CRONOGRAMA KK (valores em aberto por data)
+// ============================
+function renderCronogramaKK() {
+  const el = document.getElementById('kk-cronograma');
+  if(!el) return;
+  const AGORA = Date.now();
+  const UM_DIA_MS = 24*60*60*1000;
+
+  // esconde do cronograma itens já entregues há mais de 24h (mesmo que ainda não pagos)
+  const list = (S.entregasKK||[])
+    .filter(e=>e.dataReceber)
+    .filter(e=> !(e.entregue && e.entregueTs && (AGORA - e.entregueTs) >= UM_DIA_MS))
+    .slice()
+    .sort((a,b)=> a.dataReceber.localeCompare(b.dataReceber));
+
+  const totalDevendo = list.filter(e=>!e.pago).reduce((s,e)=>s+e.total,0);
+  const totalPago = list.filter(e=>e.pago).reduce((s,e)=>s+e.total,0);
+  const devEl = document.getElementById('kk-crono-devendo');
+  const pagEl = document.getElementById('kk-crono-pago');
+  if(devEl) devEl.textContent = brl(totalDevendo);
+  if(pagEl) pagEl.textContent = brl(totalPago);
+
+  if(!list.length){el.innerHTML='<div class="empty"><div class="empty-icon">📅</div>Nenhum valor programado</div>';return;}
+
+  // agrupa por ID do player
+  const grupos = {};
+  const ordem = [];
+  list.forEach(e=>{
+    const key = e.playerId || '—';
+    if(!grupos[key]) { grupos[key] = {playerId:key, player:e.player, items:[]}; ordem.push(key); }
+    grupos[key].items.push(e);
+  });
+
+  el.innerHTML = ordem.map(key=>{
+    const g = grupos[key];
+    const itemsHtml = g.items.map(e=>{
+      const pago = !!e.pago;
+      return `<div class="check-row ${pago?'done':''}" style="justify-content:space-between;flex-wrap:wrap;">
+        <div style="display:flex;gap:10px;align-items:center;">
+          <strong>${fmtDate(e.dataReceber)}</strong>
+          ${e.troca?'<span class="chip chip-teal" style="font-size:0.65rem;">Troca</span>':''}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-family:'Orbitron',monospace;color:${pago?'var(--green2)':'var(--gold2)'};">${brl(e.total)}</span>
+          <span class="chip ${pago?'chip-green':'chip-red'}">${pago?'PAGO':'DEVENDO'}</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:14px;">
+      <div style="font-size:0.78rem;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);">
+        <strong style="color:var(--text2);">${g.player}</strong> <span style="color:var(--text3);">ID: ${g.playerId}</span>
+      </div>
+      ${itemsHtml}
+    </div>`;
+  }).join('');
+}
+
+function copiarCronogramaKK() {
+  const AGORA = Date.now();
+  const UM_DIA_MS = 24*60*60*1000;
+  const list = (S.entregasKK||[])
+    .filter(e=>e.dataReceber)
+    .filter(e=> !(e.entregue && e.entregueTs && (AGORA - e.entregueTs) >= UM_DIA_MS))
+    .slice()
+    .sort((a,b)=> a.dataReceber.localeCompare(b.dataReceber));
+  if(!list.length) { notify('Nenhum valor programado para copiar','red'); return; }
+
+  const totalDevendo = list.filter(e=>!e.pago).reduce((s,e)=>s+e.total,0);
+  const totalPago = list.filter(e=>e.pago).reduce((s,e)=>s+e.total,0);
+
+  // agrupa por ID do player
+  const grupos = {};
+  const ordem = [];
+  list.forEach(e=>{
+    const key = e.playerId || '—';
+    if(!grupos[key]) { grupos[key] = {playerId:key, player:e.player, items:[]}; ordem.push(key); }
+    grupos[key].items.push(e);
+  });
+
+  let texto = 'CRONOGRAMA DE PAGAMENTOS\n';
+  ordem.forEach(key=>{
+    const g = grupos[key];
+    texto += `\n${g.player} (ID: ${g.playerId})\n`;
+    g.items.forEach(e=>{
+      const status = e.pago ? '✅ PAGO' : '❌ DEVENDO';
+      texto += `${fmtDate(e.dataReceber)} — ${brl(e.total)} — ${status}\n`;
+    });
+  });
+  texto += `\nTotal em aberto: ${brl(totalDevendo)}`;
+  if(totalPago > 0) texto += `\nTotal pago: ${brl(totalPago)}`;
+
+  const fallbackCopy = (txt) => {
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    ta.style.position='fixed';
+    ta.style.opacity='0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); notify('Cronograma copiado!','green'); }
+    catch(err) { notify('Não foi possível copiar automaticamente','red'); }
+    document.body.removeChild(ta);
+  };
+
+  if(navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(texto).then(()=>{
+      notify('Cronograma copiado! Cole na mensagem.','green');
+    }).catch(()=>{ fallbackCopy(texto); });
+  } else {
+    fallbackCopy(texto);
+  }
 }
 
 function marcarEntregaKK(refId, campo, val) {
   const e = S.entregasKK.find(x=>x.refId===refId);
   if(!e) return;
   e[campo] = val;
+  if(campo==='entregue') {
+    // guarda o momento em que a entrega foi marcada, para o cronograma sumir 24h depois
+    e.entregueTs = val ? Date.now() : null;
+  }
   if(e.entregue && e.pago) {
     const venda = S.vendasKK.find(v=>v.id===refId);
     if(venda){venda.status='finalizado';S.histVendasKK.push({...venda,finTs:new Date().toLocaleString('pt-BR')});}
@@ -3196,6 +3413,12 @@ window.addEventListener('load', ()=>{
   // Indica dado salvo
   const saved = localStorage.getItem(LS_KEY);
   if(saved) notify('✓ Dados carregados do armazenamento local','green');
+
+  // Atualiza o cronograma KK periodicamente (para itens saírem sozinhos após 24h)
+  setInterval(()=>{
+    const pg = document.getElementById('page-entrega-kk');
+    if(pg && pg.classList.contains('active')) renderCronogramaKK();
+  }, 5*60*1000); // a cada 5 minutos
 });
 
 // ============================
