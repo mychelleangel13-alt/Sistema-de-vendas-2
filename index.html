@@ -663,6 +663,7 @@
   <div class="sidebar-section">Operações</div>
   <div class="nav-item" onclick="goTo('vendas')"><span class="icon">💰</span>Registro Vendas</div>
   <div class="nav-item" onclick="goTo('trocas')"><span class="icon">🤝</span>Registro Trocas<span id="badge-trocas" class="nav-badge" style="display:none">0</span></div>
+  <div class="nav-item" onclick="goTo('venda-kk')"><span class="icon">🪙</span>Venda KK (Moeda)</div>
 
   <div class="sidebar-section">Produção</div>
   <div class="nav-item" onclick="goTo('farm-venda')"><span class="icon">⛏️</span>Farm / Fab. Venda</div>
@@ -671,13 +672,16 @@
   <div class="sidebar-section">Entregas</div>
   <div class="nav-item" onclick="goTo('entrega-venda')"><span class="icon">📬</span>Entrega Venda</div>
   <div class="nav-item" onclick="goTo('entrega-troca')"><span class="icon">📮</span>Entrega Troca</div>
+  <div class="nav-item" onclick="goTo('entrega-kk')"><span class="icon">🪙</span>Entrega KK</div>
 
   <div class="sidebar-section">Histórico</div>
   <div class="nav-item" onclick="goTo('hist-vendas')"><span class="icon">📜</span>Histórico Vendas</div>
   <div class="nav-item" onclick="goTo('hist-trocas')"><span class="icon">📋</span>Histórico Trocas</div>
+  <div class="nav-item" onclick="goTo('hist-kk')"><span class="icon">🪙</span>Histórico KK</div>
 
   <div class="sidebar-section">Resumo</div>
   <div class="nav-item" onclick="goTo('total')"><span class="icon">📊</span>Total</div>
+  <div class="nav-item" onclick="goTo('total-kk')"><span class="icon">🪙</span>Total KK</div>
   <div class="nav-item" onclick="goTo('cancelados')"><span class="icon">🚫</span>Cancelados<span id="badge-cancelados" class="nav-badge" style="display:none;background:var(--red)">0</span></div>
 
   <div class="sidebar-section">Dados</div>
@@ -1040,6 +1044,69 @@
   </div>
 </div>
 
+<!-- ===================== VENDA KK (MOEDA) ===================== -->
+<div class="page" id="page-venda-kk">
+  <div class="page-title">🪙 Venda de Moeda (KK)</div>
+  <div class="page-sub">VENDA DE MILHÕES DA MOEDA DO JOGO</div>
+
+  <div class="card">
+    <div class="card-title">Nova Venda KK</div>
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Nick do Player</label>
+        <input id="kk-player" type="text" placeholder="Nick...">
+      </div>
+      <div class="form-group">
+        <label>ID do Player</label>
+        <input id="kk-id" type="text" placeholder="ID...">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Quantidade (em milhões)</label>
+      <input id="kk-milhoes" type="number" placeholder="Ex: 10" min="0" step="0.01" oninput="calcKK()">
+    </div>
+
+    <div class="grid-2">
+      <div class="form-group">
+        <label>Data para Envio (da moeda do jogo)</label>
+        <input id="kk-data-envio" type="date">
+      </div>
+      <div class="form-group">
+        <label>Data para Receber (o dinheiro real)</label>
+        <input id="kk-data-receber" type="date">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:8px;margin:0;cursor:pointer;">
+        <input type="checkbox" id="kk-troca" onchange="calcKK()" style="width:auto;">
+        Vender na troca (R$ 2,22/milhão em vez de R$ 2,50/milhão)
+      </label>
+    </div>
+
+    <div class="grid-2" style="margin-top:8px;">
+      <div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-bottom:4px;">Preço por Milhão</div>
+        <div id="kk-preco-unit" style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--gold2);">R$ 2,50</div>
+      </div>
+      <div>
+        <div style="font-size:0.75rem;color:var(--text2);margin-bottom:4px;">Total a Receber</div>
+        <div id="kk-total" style="font-family:'Orbitron',monospace;font-size:1.1rem;color:var(--green2);">R$ 0,00</div>
+      </div>
+    </div>
+
+    <button class="btn btn-gold" onclick="finalizarVendaKK()" style="margin-top:14px;">✓ Confirmar Venda → Entrega</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Vendas KK em Aberto</div>
+    <div id="kk-open-list">
+      <div class="empty"><div class="empty-icon">🪙</div>Nenhuma venda KK em aberto</div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== FARM / FAB VENDA ===================== -->
 <div class="page" id="page-farm-venda">
   <div class="page-title">⛏️ Farmando & Fabricação — Vendas</div>
@@ -1073,6 +1140,15 @@
   <div class="page-sub">MARQUE QUANDO AMBAS ENTREGAS FOREM REALIZADAS</div>
   <div id="et-list">
     <div class="empty"><div class="empty-icon">📮</div>Nenhuma troca aguardando entrega</div>
+  </div>
+</div>
+
+<!-- ===================== ENTREGA KK ===================== -->
+<div class="page" id="page-entrega-kk">
+  <div class="page-title">🪙 Entrega KK</div>
+  <div class="page-sub">MARQUE QUANDO ENTREGAR A MOEDA E QUANDO RECEBER O PAGAMENTO</div>
+  <div id="ekk-list">
+    <div class="empty"><div class="empty-icon">🪙</div>Nenhuma venda KK aguardando entrega</div>
   </div>
 </div>
 
@@ -1120,6 +1196,33 @@
   </div>
 </div>
 
+<!-- ===================== HISTÓRICO KK ===================== -->
+<div class="page" id="page-hist-kk">
+  <div class="page-title">🪙 Histórico KK</div>
+  <div class="page-sub">TODAS AS VENDAS DE MOEDA FINALIZADAS</div>
+
+  <div class="grid-3" style="margin-bottom:16px;">
+    <div class="stat-card">
+      <div class="stat-val" id="hkk-total-vendas">0</div>
+      <div class="stat-label">Total de Vendas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="hkk-total-milhoes">0</div>
+      <div class="stat-label">Milhões Vendidos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="hkk-total-valor">R$ 0,00</div>
+      <div class="stat-label">Total Recebido</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="hkk-list">
+      <div class="empty"><div class="empty-icon">🪙</div>Nenhuma venda KK finalizada ainda</div>
+    </div>
+  </div>
+</div>
+
 <!-- ===================== TOTAL ===================== -->
 <div class="page" id="page-total">
   <div class="page-title">📊 Dashboard Total</div>
@@ -1161,12 +1264,42 @@
   </div>
 </div>
 
+<!-- ===================== TOTAL KK ===================== -->
+<div class="page" id="page-total-kk">
+  <div class="page-title">🪙 Total KK</div>
+  <div class="page-sub">RESUMO DAS VENDAS DE MOEDA DO JOGO</div>
+
+  <div class="grid-4" style="margin-bottom:20px;">
+    <div class="stat-card">
+      <div class="stat-val" id="totkk-recebido" style="font-size:1.1rem;">R$ 0,00</div>
+      <div class="stat-label">Total Recebido</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="totkk-milhoes">0</div>
+      <div class="stat-label">Milhões Vendidos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="totkk-normais">0</div>
+      <div class="stat-label">Vendas Normais</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="totkk-trocas">0</div>
+      <div class="stat-label">Vendas na Troca</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Últimas Vendas KK</div>
+    <div id="totkk-ultimas"></div>
+  </div>
+</div>
+
 <!-- ===================== CANCELADOS ===================== -->
 <div class="page" id="page-cancelados">
   <div class="page-title">🚫 Cancelados</div>
   <div class="page-sub">ENCOMENDAS E TROCAS CANCELADAS COM MOTIVO</div>
 
-  <div class="grid-2" style="margin-bottom:16px;">
+  <div class="grid-3" style="margin-bottom:16px;">
     <div class="stat-card">
       <div class="stat-val" id="canc-total-vendas" style="color:var(--red2)">0</div>
       <div class="stat-label">Vendas Canceladas</div>
@@ -1174,6 +1307,10 @@
     <div class="stat-card">
       <div class="stat-val" id="canc-total-trocas" style="color:var(--red2)">0</div>
       <div class="stat-label">Trocas Canceladas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" id="canc-total-kk" style="color:var(--red2)">0</div>
+      <div class="stat-label">Vendas KK Canceladas</div>
     </div>
   </div>
 
@@ -1184,10 +1321,17 @@
     </div>
   </div>
 
-  <div class="card">
+  <div class="card" style="margin-bottom:16px;">
     <div class="card-title">🤝 Trocas Canceladas</div>
     <div id="canc-trocas-list">
       <div class="empty"><div class="empty-icon">🚫</div>Nenhuma troca cancelada</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🪙 Vendas KK Canceladas</div>
+    <div id="canc-kk-list">
+      <div class="empty"><div class="empty-icon">🚫</div>Nenhuma venda KK cancelada</div>
     </div>
   </div>
 </div>
@@ -1278,6 +1422,9 @@ const DEFAULTS = {
   histVendas: [],
   histTrocas: [],
   cancelados: [],
+  vendasKK: [],
+  entregasKK: [],
+  histVendasKK: [],
   idCounter: 1,
 };
 
@@ -1306,6 +1453,9 @@ function saveState() {
       histVendas: S.histVendas,
       histTrocas: S.histTrocas,
       cancelados: S.cancelados,
+      vendasKK: S.vendasKK,
+      entregasKK: S.entregasKK,
+      histVendasKK: S.histVendasKK,
       idCounter: idCounter,
     };
     localStorage.setItem(LS_KEY, JSON.stringify(toSave));
@@ -1328,6 +1478,9 @@ const S = {
   histVendas: _loaded.histVendas,
   histTrocas: _loaded.histTrocas,
   cancelados: _loaded.cancelados||[],
+  vendasKK: _loaded.vendasKK||[],
+  entregasKK: _loaded.entregasKK||[],
+  histVendasKK: _loaded.histVendasKK||[],
   // Temporários (não persistidos)
   calcVendaItems: [],
   calcVendaCliente: '',
@@ -1375,13 +1528,17 @@ const PAGE_NAMES = {
   'calc-troca': 'Calc. Trocas',
   'vendas': 'Vendas',
   'trocas': 'Trocas',
+  'venda-kk': 'Venda KK',
   'farm-venda': 'Farm Venda',
   'farm-troca': 'Farm Troca',
   'entrega-venda': 'Entrega Venda',
   'entrega-troca': 'Entrega Troca',
+  'entrega-kk': 'Entrega KK',
   'hist-vendas': 'Hist. Vendas',
   'hist-trocas': 'Hist. Trocas',
+  'hist-kk': 'Hist. KK',
   'total': 'Dashboard',
+  'total-kk': 'Total KK',
   'cancelados': 'Cancelados',
 };
 
@@ -1405,12 +1562,16 @@ function goTo(id) {
     'farm-troca': renderFarmTroca,
     'entrega-venda': renderEntregaVenda,
     'entrega-troca': renderEntregaTroca,
+    'entrega-kk': renderEntregaKK,
     'hist-vendas': renderHistVendas,
     'hist-trocas': renderHistTrocas,
+    'hist-kk': renderHistKK,
     'total': renderTotal,
+    'total-kk': renderTotalKK,
     'cancelados': renderCancelados,
     'calc-venda': refreshCalcVendaSelects,
     'calc-troca': refreshCalcTrocaSelects,
+    'venda-kk': renderVendaKKAberto,
   };
   if(refreshMap[id]) refreshMap[id]();
 }
@@ -2028,6 +2189,204 @@ function updateBadge() {
 }
 
 // ============================
+// VENDA KK (MOEDA DO JOGO)
+// ============================
+const KK_PRECO_NORMAL = 2.50;
+const KK_PRECO_TROCA = 2.22;
+const brl = (n) => 'R$ ' + (n||0).toFixed(2).replace('.',',');
+const fmtDate = (d) => {
+  if(!d) return '—';
+  const p = d.split('-');
+  if(p.length!==3) return d;
+  return p[2]+'/'+p[1]+'/'+p[0];
+};
+
+function calcKK() {
+  const milhoesEl = document.getElementById('kk-milhoes');
+  const trocaEl = document.getElementById('kk-troca');
+  if(!milhoesEl||!trocaEl) return;
+  const milhoes = parseFloat(milhoesEl.value)||0;
+  const troca = trocaEl.checked;
+  const preco = troca ? KK_PRECO_TROCA : KK_PRECO_NORMAL;
+  const total = milhoes*preco;
+  document.getElementById('kk-preco-unit').textContent = brl(preco) + '/milhão';
+  document.getElementById('kk-total').textContent = brl(total);
+}
+
+function finalizarVendaKK() {
+  const player = document.getElementById('kk-player').value.trim()||'Sem nome';
+  const pid = document.getElementById('kk-id').value.trim()||'—';
+  const milhoes = parseFloat(document.getElementById('kk-milhoes').value)||0;
+  const troca = document.getElementById('kk-troca').checked;
+  const dataEnvio = document.getElementById('kk-data-envio').value||'';
+  const dataReceber = document.getElementById('kk-data-receber').value||'';
+  if(!milhoes){notify('Informe a quantidade de milhões','red');return;}
+  const preco = troca?KK_PRECO_TROCA:KK_PRECO_NORMAL;
+  const total = milhoes*preco;
+  const kid = uid();
+  const ts = new Date().toLocaleString('pt-BR');
+  const venda = {id:kid, player, playerId:pid, milhoes, troca, precoUnit:preco, total, dataEnvio, dataReceber, ts, status:'entrega'};
+  S.vendasKK.push(venda);
+  S.entregasKK.push({refId:kid, player, playerId:pid, milhoes, troca, precoUnit:preco, total, dataEnvio, dataReceber, entregue:false, pago:false, ts});
+  document.getElementById('kk-player').value='';
+  document.getElementById('kk-id').value='';
+  document.getElementById('kk-milhoes').value='';
+  document.getElementById('kk-troca').checked=false;
+  document.getElementById('kk-data-envio').value='';
+  document.getElementById('kk-data-receber').value='';
+  calcKK();
+  save();
+  renderVendaKKAberto();
+  notify('Venda KK registrada! → Indo para Entrega','green');
+}
+
+function renderVendaKKAberto() {
+  const el = document.getElementById('kk-open-list');
+  if(!el) return;
+  const open = S.vendasKK.filter(v=>v.status!=='finalizado'&&v.status!=='cancelado');
+  if(!open.length){el.innerHTML='<div class="empty"><div class="empty-icon">🪙</div>Nenhuma venda KK em aberto</div>';return;}
+  el.innerHTML = open.map(v=>`
+    <div class="card" style="margin-bottom:8px;">
+      <div class="flex flex-between flex-center">
+        <div><strong>${v.player}</strong> <span style="color:var(--text3);font-size:0.75rem">ID: ${v.playerId}</span></div>
+        <div><span class="chip chip-gold">${v.milhoes}kk</span> <span class="chip chip-green">${brl(v.total)}</span>${v.troca?' <span class="chip chip-teal">Troca</span>':''}</div>
+      </div>
+      <div style="font-size:0.78rem;color:var(--text3);margin-top:4px">${v.ts}</div>
+      <div style="font-size:0.75rem;color:var(--text2);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;">
+        <span>📤 Envio da moeda: <strong>${fmtDate(v.dataEnvio)}</strong></span>
+        <span>💵 Receber dinheiro: <strong>${fmtDate(v.dataReceber)}</strong></span>
+      </div>
+    </div>`).join('');
+}
+
+// ============================
+// ENTREGA KK
+// ============================
+function renderEntregaKK() {
+  const el = document.getElementById('ekk-list');
+  if(!el) return;
+  const pendentes = S.entregasKK.filter(e=>!(e.entregue&&e.pago));
+  if(!pendentes.length){el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Nenhuma venda KK aguardando entrega</div>';return;}
+  el.innerHTML = pendentes.map(e=>`
+    <div class="card" style="margin-bottom:10px;">
+      <div class="flex flex-between flex-center" style="flex-wrap:wrap;gap:8px;">
+        <div><strong>${e.player}</strong> <span style="color:var(--text3);font-size:0.75rem">ID: ${e.playerId}</span></div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span class="chip chip-gold">${e.milhoes}kk${e.troca?' (troca)':''}</span>
+          <span class="chip chip-green">${brl(e.total)}</span>
+          <button class="btn btn-red btn-xs" onclick="cancelarVendaKK('${e.refId}')" title="Cancelar venda">🗑 Cancelar</button>
+        </div>
+      </div>
+      <div style="font-size:0.75rem;color:var(--text3);margin-top:4px">${e.ts}</div>
+      <div style="font-size:0.75rem;color:var(--text2);margin-top:6px;display:flex;gap:14px;flex-wrap:wrap;">
+        <span>📤 Envio da moeda: <strong>${fmtDate(e.dataEnvio)}</strong></span>
+        <span>💵 Receber dinheiro: <strong>${fmtDate(e.dataReceber)}</strong></span>
+      </div>
+      <div class="check-row" style="margin-top:10px;">
+        <input type="checkbox" ${e.entregue?'checked':''} onchange="marcarEntregaKK('${e.refId}','entregue',this.checked)">
+        <span>Entreguei a moeda</span>
+        ${e.entregue?'<span class="chip chip-green">✓ Entregue</span>':'<span class="chip chip-red">Pendente</span>'}
+      </div>
+      <div class="check-row">
+        <input type="checkbox" ${e.pago?'checked':''} onchange="marcarEntregaKK('${e.refId}','pago',this.checked)">
+        <span>Pessoa pagou</span>
+        ${e.pago?'<span class="chip chip-green">✓ Pago</span>':'<span class="chip chip-red">Pendente</span>'}
+      </div>
+    </div>`).join('');
+}
+
+function marcarEntregaKK(refId, campo, val) {
+  const e = S.entregasKK.find(x=>x.refId===refId);
+  if(!e) return;
+  e[campo] = val;
+  if(e.entregue && e.pago) {
+    const venda = S.vendasKK.find(v=>v.id===refId);
+    if(venda){venda.status='finalizado';S.histVendasKK.push({...venda,finTs:new Date().toLocaleString('pt-BR')});}
+    save();
+    setTimeout(()=>{renderEntregaKK();renderHistKK();},300);
+    notify('Venda KK finalizada e registrada no histórico!','green');
+  } else { save(); renderEntregaKK(); }
+}
+
+function cancelarVendaKK(refId) {
+  const motivo = prompt('Motivo do cancelamento (opcional):','');
+  if(motivo === null) return;
+  const idx = S.vendasKK.findIndex(v=>v.id===refId);
+  if(idx===-1) return;
+  const v = S.vendasKK[idx];
+  v.status = 'cancelado';
+  S.entregasKK = S.entregasKK.filter(e=>e.refId!==refId);
+  if(!S.cancelados) S.cancelados=[];
+  S.cancelados.push({
+    tipo:'kk',
+    refId,
+    nome: v.player,
+    nomeId: v.playerId,
+    motivo: motivo||'Não informado',
+    ts: v.ts,
+    canceladoEm: new Date().toLocaleString('pt-BR'),
+    itens: [v.milhoes+'kk'+(v.troca?' (troca)':' (normal)')+' — '+brl(v.total)]
+  });
+  save();
+  renderEntregaKK();
+  renderVendaKKAberto();
+  updateBadgeCancelados();
+  notify('Venda KK cancelada.','red');
+}
+
+// ============================
+// HISTÓRICO KK
+// ============================
+function renderHistKK() {
+  const el = document.getElementById('hkk-list');
+  if(!el) return;
+  const totalValor = S.histVendasKK.reduce((s,v)=>s+v.total,0);
+  const totalMilhoes = S.histVendasKK.reduce((s,v)=>s+v.milhoes,0);
+  document.getElementById('hkk-total-vendas').textContent = S.histVendasKK.length;
+  document.getElementById('hkk-total-milhoes').textContent = (Math.round(totalMilhoes*100)/100)+'kk';
+  document.getElementById('hkk-total-valor').textContent = brl(totalValor);
+  if(!S.histVendasKK.length){el.innerHTML='<div class="empty"><div class="empty-icon">🪙</div>Nenhuma venda KK finalizada ainda</div>';return;}
+  el.innerHTML='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Player</th><th>ID</th><th>Milhões</th><th>Tipo</th><th>Total</th><th>Envio</th><th>Receber</th><th>Finalizada em</th></tr></thead><tbody>'+
+    [...S.histVendasKK].reverse().map(v=>`<tr>
+      <td><strong>${v.player}</strong></td>
+      <td style="color:var(--text3)">${v.playerId}</td>
+      <td><span class="chip chip-gold">${v.milhoes}kk</span></td>
+      <td>${v.troca?'<span class="chip chip-teal">Troca</span>':'<span class="chip chip-gold">Normal</span>'}</td>
+      <td><span class="chip chip-green">${brl(v.total)}</span></td>
+      <td style="color:var(--text3);font-size:0.75rem">${fmtDate(v.dataEnvio)}</td>
+      <td style="color:var(--text3);font-size:0.75rem">${fmtDate(v.dataReceber)}</td>
+      <td style="color:var(--text3);font-size:0.75rem">${v.finTs||v.ts}</td>
+    </tr>`).join('')+'</tbody></table></div>';
+}
+
+// ============================
+// TOTAL KK
+// ============================
+function renderTotalKK() {
+  const totalValor = S.histVendasKK.reduce((s,v)=>s+v.total,0);
+  const totalMilhoes = S.histVendasKK.reduce((s,v)=>s+v.milhoes,0);
+  const normais = S.histVendasKK.filter(v=>!v.troca).length;
+  const trocas = S.histVendasKK.filter(v=>v.troca).length;
+  document.getElementById('totkk-recebido').textContent = brl(totalValor);
+  document.getElementById('totkk-milhoes').textContent = (Math.round(totalMilhoes*100)/100)+'kk';
+  document.getElementById('totkk-normais').textContent = normais;
+  document.getElementById('totkk-trocas').textContent = trocas;
+
+  const el = document.getElementById('totkk-ultimas');
+  const todas = [...S.histVendasKK].sort((a,b)=> (b.finTs||b.ts) > (a.finTs||a.ts) ? 1 : -1).slice(0,10);
+  el.innerHTML = todas.length===0
+    ? '<div class="empty"><div class="empty-icon">📊</div>Nenhuma venda KK ainda</div>'
+    : '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Player</th><th>Milhões</th><th>Tipo</th><th>Valor</th><th>Data</th></tr></thead><tbody>'+
+      todas.map(v=>`<tr>
+        <td><strong>${v.player}</strong></td>
+        <td>${v.milhoes}kk</td>
+        <td>${v.troca?'Troca':'Normal'}</td>
+        <td>${brl(v.total)}</td>
+        <td style="color:var(--text3);font-size:0.75rem">${v.finTs||v.ts}</td>
+      </tr>`).join('')+'</tbody></table></div>';
+}
+
+// ============================
 // FARM VENDA
 // ============================
 function buildFarmProgress(ativos) {
@@ -2544,9 +2903,11 @@ function renderCancelados() {
   if(!S.cancelados) S.cancelados=[];
   const vendas = S.cancelados.filter(c=>c.tipo==='venda');
   const trocas = S.cancelados.filter(c=>c.tipo==='troca');
+  const kks = S.cancelados.filter(c=>c.tipo==='kk');
 
   document.getElementById('canc-total-vendas').textContent = vendas.length;
   document.getElementById('canc-total-trocas').textContent = trocas.length;
+  document.getElementById('canc-total-kk').textContent = kks.length;
 
   // Vendas canceladas
   const evEl = document.getElementById('canc-vendas-list');
@@ -2581,6 +2942,24 @@ function renderCancelados() {
           <td><span class="chip chip-red" style="font-size:0.72rem;cursor:pointer" onclick="editMotivo('troca',${trocas.length-1-ri})" title="Clique para editar">${c.motivo}</span></td>
           <td style="color:var(--text3);font-size:0.75rem">${c.canceladoEm||c.ts}</td>
           <td><button class="btn btn-red btn-xs" onclick="removerCancelado('troca',${trocas.length-1-ri})">✕</button></td>
+        </tr>`;
+      }).join('') + '</tbody></table></div>';
+  }
+
+  // KK canceladas
+  const ekkEl = document.getElementById('canc-kk-list');
+  if(!kks.length) {
+    ekkEl.innerHTML='<div class="empty"><div class="empty-icon">🚫</div>Nenhuma venda KK cancelada</div>';
+  } else {
+    ekkEl.innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Player</th><th>ID</th><th>Venda</th><th>Motivo</th><th>Cancelado em</th><th></th></tr></thead><tbody>' +
+      [...kks].reverse().map((c,ri)=>{
+        return `<tr>
+          <td><strong>${c.nome}</strong></td>
+          <td style="color:var(--text3)">${c.nomeId}</td>
+          <td style="font-size:0.78rem;color:var(--text2)">${(c.itens||[]).join(', ')||'—'}</td>
+          <td><span class="chip chip-red" style="font-size:0.72rem;cursor:pointer" onclick="editMotivo('kk',${kks.length-1-ri})" title="Clique para editar">${c.motivo}</span></td>
+          <td style="color:var(--text3);font-size:0.75rem">${c.canceladoEm||c.ts}</td>
+          <td><button class="btn btn-red btn-xs" onclick="removerCancelado('kk',${kks.length-1-ri})">✕</button></td>
         </tr>`;
       }).join('') + '</tbody></table></div>';
   }
