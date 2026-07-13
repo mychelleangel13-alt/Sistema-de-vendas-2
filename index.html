@@ -663,7 +663,7 @@
   <div class="sidebar-section">Operações</div>
   <div class="nav-item" onclick="goTo('vendas')"><span class="icon">💰</span>Registro Vendas</div>
   <div class="nav-item" onclick="goTo('trocas')"><span class="icon">🤝</span>Registro Trocas<span id="badge-trocas" class="nav-badge" style="display:none">0</span></div>
-  <div class="nav-item" onclick="goTo('venda-kk')"><span class="icon">🪙</span>Venda KK (Moeda)</div>
+  <div class="nav-item" onclick="goTo('venda-kk')"><span class="icon">💰</span>Venda KK (Moeda)</div>
 
   <div class="sidebar-section">Produção</div>
   <div class="nav-item" onclick="goTo('farm-venda')"><span class="icon">⛏️</span>Farm / Fab. Venda</div>
@@ -672,16 +672,16 @@
   <div class="sidebar-section">Entregas</div>
   <div class="nav-item" onclick="goTo('entrega-venda')"><span class="icon">📬</span>Entrega Venda</div>
   <div class="nav-item" onclick="goTo('entrega-troca')"><span class="icon">📮</span>Entrega Troca</div>
-  <div class="nav-item" onclick="goTo('entrega-kk')"><span class="icon">🪙</span>Entrega KK</div>
+  <div class="nav-item" onclick="goTo('entrega-kk')"><span class="icon">💰</span>Entrega KK</div>
 
   <div class="sidebar-section">Histórico</div>
   <div class="nav-item" onclick="goTo('hist-vendas')"><span class="icon">📜</span>Histórico Vendas</div>
   <div class="nav-item" onclick="goTo('hist-trocas')"><span class="icon">📋</span>Histórico Trocas</div>
-  <div class="nav-item" onclick="goTo('hist-kk')"><span class="icon">🪙</span>Histórico KK</div>
+  <div class="nav-item" onclick="goTo('hist-kk')"><span class="icon">💰</span>Histórico KK</div>
 
   <div class="sidebar-section">Resumo</div>
   <div class="nav-item" onclick="goTo('total')"><span class="icon">📊</span>Total</div>
-  <div class="nav-item" onclick="goTo('total-kk')"><span class="icon">🪙</span>Total KK</div>
+  <div class="nav-item" onclick="goTo('total-kk')"><span class="icon">💰</span>Total KK</div>
   <div class="nav-item" onclick="goTo('cancelados')"><span class="icon">🚫</span>Cancelados<span id="badge-cancelados" class="nav-badge" style="display:none;background:var(--red)">0</span></div>
 
   <div class="sidebar-section">Dados</div>
@@ -1046,7 +1046,7 @@
 
 <!-- ===================== VENDA KK (MOEDA) ===================== -->
 <div class="page" id="page-venda-kk">
-  <div class="page-title">🪙 Venda de Moeda (KK)</div>
+  <div class="page-title">💰 Venda de Moeda (KK)</div>
   <div class="page-sub">VENDA DE MILHÕES DA MOEDA DO JOGO</div>
 
   <div class="card">
@@ -1102,7 +1102,7 @@
   <div class="card">
     <div class="card-title">Vendas KK em Aberto</div>
     <div id="kk-open-list">
-      <div class="empty"><div class="empty-icon">🪙</div>Nenhuma venda KK em aberto</div>
+      <div class="empty"><div class="empty-icon">💰</div>Nenhuma venda KK em aberto</div>
     </div>
   </div>
 </div>
@@ -1145,10 +1145,10 @@
 
 <!-- ===================== ENTREGA KK ===================== -->
 <div class="page" id="page-entrega-kk">
-  <div class="page-title">🪙 Entrega KK</div>
+  <div class="page-title">💰 Entrega KK</div>
   <div class="page-sub">MARQUE QUANDO ENTREGAR A MOEDA E QUANDO RECEBER O PAGAMENTO</div>
   <div id="ekk-list">
-    <div class="empty"><div class="empty-icon">🪙</div>Nenhuma venda KK aguardando entrega</div>
+    <div class="empty"><div class="empty-icon">💰</div>Nenhuma venda KK aguardando entrega</div>
   </div>
 </div>
 
@@ -1198,7 +1198,7 @@
 
 <!-- ===================== HISTÓRICO KK ===================== -->
 <div class="page" id="page-hist-kk">
-  <div class="page-title">🪙 Histórico KK</div>
+  <div class="page-title">💰 Histórico KK</div>
   <div class="page-sub">TODAS AS VENDAS DE MOEDA FINALIZADAS</div>
 
   <div class="grid-3" style="margin-bottom:16px;">
@@ -1218,7 +1218,7 @@
 
   <div class="card">
     <div id="hkk-list">
-      <div class="empty"><div class="empty-icon">🪙</div>Nenhuma venda KK finalizada ainda</div>
+      <div class="empty"><div class="empty-icon">💰</div>Nenhuma venda KK finalizada ainda</div>
     </div>
   </div>
 </div>
@@ -1266,7 +1266,7 @@
 
 <!-- ===================== TOTAL KK ===================== -->
 <div class="page" id="page-total-kk">
-  <div class="page-title">🪙 Total KK</div>
+  <div class="page-title">💰 Total KK</div>
   <div class="page-sub">RESUMO DAS VENDAS DE MOEDA DO JOGO</div>
 
   <div class="grid-4" style="margin-bottom:20px;">
@@ -1329,7 +1329,7 @@
   </div>
 
   <div class="card">
-    <div class="card-title">🪙 Vendas KK Canceladas</div>
+    <div class="card-title">💰 Vendas KK Canceladas</div>
     <div id="canc-kk-list">
       <div class="empty"><div class="empty-icon">🚫</div>Nenhuma venda KK cancelada</div>
     </div>
@@ -2244,7 +2244,7 @@ function renderVendaKKAberto() {
   const el = document.getElementById('kk-open-list');
   if(!el) return;
   const open = S.vendasKK.filter(v=>v.status!=='finalizado'&&v.status!=='cancelado');
-  if(!open.length){el.innerHTML='<div class="empty"><div class="empty-icon">🪙</div>Nenhuma venda KK em aberto</div>';return;}
+  if(!open.length){el.innerHTML='<div class="empty"><div class="empty-icon">💰</div>Nenhuma venda KK em aberto</div>';return;}
   el.innerHTML = open.map(v=>`
     <div class="card" style="margin-bottom:8px;">
       <div class="flex flex-between flex-center">
@@ -2345,7 +2345,7 @@ function renderHistKK() {
   document.getElementById('hkk-total-vendas').textContent = S.histVendasKK.length;
   document.getElementById('hkk-total-milhoes').textContent = (Math.round(totalMilhoes*100)/100)+'kk';
   document.getElementById('hkk-total-valor').textContent = brl(totalValor);
-  if(!S.histVendasKK.length){el.innerHTML='<div class="empty"><div class="empty-icon">🪙</div>Nenhuma venda KK finalizada ainda</div>';return;}
+  if(!S.histVendasKK.length){el.innerHTML='<div class="empty"><div class="empty-icon">💰</div>Nenhuma venda KK finalizada ainda</div>';return;}
   el.innerHTML='<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Player</th><th>ID</th><th>Milhões</th><th>Tipo</th><th>Total</th><th>Envio</th><th>Receber</th><th>Finalizada em</th></tr></thead><tbody>'+
     [...S.histVendasKK].reverse().map(v=>`<tr>
       <td><strong>${v.player}</strong></td>
